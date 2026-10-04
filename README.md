@@ -1,12 +1,4 @@
-# Lattice Lab — Virtual Lab & Multi-Agent Research Operating System
 
-A 1:1 structural and functional clone of [project486.org](https://project486.org/), customized with:
-1. **Branding:** Rebranded to **Lattice Lab**.
-2. **Light Theme Reversal:** Inverted from dark to a crisp, modern scientific white/light aesthetic (`#ffffff`, `#f8f9fa`, `#111827`).
-3. **Accent Palette:** Replaced original green accents with vibrant modern yellow (`#FACC15`, `#EAB308`, `#CA8A04`), with high-contrast charcoal/black text inside yellow buttons for optimal accessibility.
-4. **Functional Backend:** Includes a lightweight Node.js server with REST APIs, Server-Sent Events (SSE) streaming live agent pipeline simulation ticks, and an authenticated Operator console.
-
----
 
 ## Site Pages & Architecture
 
