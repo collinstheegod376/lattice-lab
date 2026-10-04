@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VIRTUAL LAB — Lattice Lab</title>
+  <meta name="description" content="3D Virtual Multi-Agent Laboratory." />
+
+  <!-- Google Fonts: STIX Two Text & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#ffffff',
+            panel: '#ffffff',
+            panel2: '#f8f9fa',
+            line: '#e5e7eb',
+            line2: '#d1d5db',
+            ink: '#111827',
+            dim: '#4b5563',
+            faint: '#6b7280',
+            term: '#ca8a04',
+            'term-bright': '#facc15',
+            termdim: '#854d0e',
+            violet: '#7c3aed',
+            violetdim: '#c4b5fd',
+            warn: '#d97706',
+            fail: '#dc2626'
+          },
+          fontSize: {
+            '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+            system: ['STIX Two Text', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js & OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body, html {
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .font-system {
+      font-family: 'STIX Two Text', Georgia, serif;
+    }
+    @keyframes pulseline {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+    .animate-pulseline {
+      animation: pulseline 2s infinite ease-in-out;
+    }
+    .cursor::after {
+      content: '▋';
+      margin-left: 2px;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body class="h-screen flex flex-col bg-base text-ink">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="relative border-b border-line px-3 sm:px-4 h-11 flex items-center gap-2 sm:gap-3 shrink-0 bg-base z-30">
+    <a class="shrink-0 flex items-center gap-2" aria-label="LATTICE LAB home" href="/">
+      <div class="w-6 h-6 border border-ink/80 flex items-center justify-center bg-term-bright/20">
+        <svg class="w-4 h-4 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      <span class="font-mono font-bold text-xs tracking-[0.16em] text-ink select-none">LATTICE LAB</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/">HOME</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-semibold" href="/lab">LAB</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/research">RESEARCH</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/archive">ARCHIVE</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/agents">AGENTS</a>
+    </nav>
+    <nav class="flex sm:hidden items-center gap-1 min-w-0">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-semibold" href="/lab">LAB</a>
+    </nav>
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+      <a class="hidden sm:inline-flex px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-violet" href="/operator">OPERATOR</a>
+      <span class="w-px h-4 bg-line mx-0.5 hidden sm:block"></span>
+      <a href="https://x.com/486LABS?s=20" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on X" class="text-faint hover:text-ink p-1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path>
+        </svg>
+      </a>
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" aria-label="Lattice-01 paper on arXiv" class="hover:opacity-80" title="arXiv:2601.00931">
+        <span aria-hidden="true" style="font-family:Georgia, 'Times New Roman', serif;font-size:14px;line-height:1;white-space:nowrap">
+          <span style="color:#4b5563">ar</span><span style="color:#b31b1b;position:relative;top:0.13em">X</span><span style="color:#4b5563">iv</span>
+        </span>
+      </a>
+      <a href="https://github.com/project486-labs" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on GitHub" class="text-faint hover:text-ink p-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .321.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== SUB-BAR ==================== -->
+  <div class="flex items-center justify-between px-4 h-9 border-b border-line text-2xs shrink-0 bg-base z-20">
+    <div class="flex items-center gap-3">
+      <span class="text-faint tracking-[0.14em]">VIRTUAL LAB</span>
+      <span class="text-line2">/</span>
+      <span class="text-ink font-semibold">RESEARCH #001</span>
+      <span class="text-term font-semibold">LATTICE-01</span>
+      <span class="text-faint hidden sm:inline">potassium-doped graphene superlattice — 2D superconducting candidate</span>
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" title="View the Lattice-01 paper on arXiv" class="inline-flex items-center gap-1.5 border border-line px-2 py-1 hover:border-line2 hover:bg-panel2 ml-1 !py-0.5 hidden sm:inline-flex bg-white">
+        <span aria-hidden="true" style="font-family:Georgia, 'Times New Roman', serif;font-size:13px;line-height:1;letter-spacing:0.01em;white-space:nowrap">
+          <span style="color:#4b5563">ar</span><span style="color:#b31b1b;position:relative;top:0.13em">X</span><span style="color:#4b5563">iv</span>
+        </span>
+      </a>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="stream-dot" class="inline-block w-1.5 h-1.5 rounded-full bg-term animate-pulseline"></span>
+      <span id="stream-status" class="text-faint">live</span>
+    </div>
+  </div>
+
+  <!-- ==================== 3D LAB SCENE & UI ==================== -->
+  <div class="flex-1 flex min-h-0 relative overflow-hidden">
+    
+    <!-- Three.js Canvas Container -->
+    <div id="canvas-container" class="absolute inset-0 w-full h-full bg-[#f8f9fa]"></div>
+
+    <!-- Loading Overlay (Shown during 3D init) -->
+    <div id="lab-loader" class="absolute inset-0 flex items-center justify-center bg-base/80 z-10 transition-opacity duration-300 pointer-events-none">
+      <span class="text-faint text-xs tracking-[0.2em] font-mono cursor">INITIALISING 3D LAB</span>
+    </div>
+
+    <!-- Orbit Controls Hint Overlay -->
+    <div class="absolute bottom-32 right-3 text-2xs text-faint/80 pointer-events-none select-none z-10 font-mono bg-white/80 px-2 py-0.5 border border-line/60 rounded">
+      drag to orbit · scroll to zoom · click a researcher
+    </div>
+
+    <!-- Inspection Drawer (j / /api/agent-panel) -->
+    <div id="inspector-drawer" class="hidden absolute top-0 right-0 bottom-32 w-80 sm:w-96 bg-white border-l border-line shadow-xl z-20 flex flex-col font-system">
+      <div class="flex items-center justify-between px-3 h-10 border-b border-line bg-panel2">
+        <div class="flex items-center gap-2">
+          <span id="inspect-code" class="text-ink font-bold text-xs font-mono">LAB-01</span>
+          <span id="inspect-role" class="text-term text-2xs font-semibold uppercase tracking-wider">DIRECTOR</span>
+        </div>
+        <button onclick="closeInspector()" class="text-dim hover:text-ink text-sm px-1 font-mono">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div>
+          <div id="inspect-title" class="text-ink text-sm font-semibold">research director</div>
+          <div id="inspect-desc" class="text-dim text-xs mt-1 leading-relaxed">Plans beats, assigns work, decides what advances. Speaks rarely.</div>
+        </div>
+
+        <div class="border border-line bg-panel2 p-2.5 text-xs space-y-1.5 font-mono text-2xs">
+          <div class="flex justify-between"><span class="text-faint">workstation:</span><span id="inspect-station" class="text-ink font-semibold">DIRECTOR · CONTROL</span></div>
+          <div class="flex justify-between"><span class="text-faint">status:</span><span id="inspect-state" class="text-term font-semibold">MESSAGING</span></div>
+          <div class="flex justify-between"><span class="text-faint">current task:</span><span id="inspect-task" class="text-dim truncate max-w-[180px]">LAT-T022 · done</span></div>
+        </div>
+
+        <div>
+          <div class="label mb-2">RECENT DISPATCHES</div>
+          <div id="inspect-logs" class="space-y-1 font-mono text-2xs text-dim bg-panel2 p-2.5 border border-line max-h-40 overflow-y-auto"></div>
+        </div>
+
+        <div class="pt-2">
+          <a id="inspect-full-link" href="/agents" class="block text-center border border-line2 hover:border-term px-3 py-1.5 text-2xs tracking-[0.14em] text-ink font-mono bg-white hover:bg-term-bright/20 transition">
+            OPEN FULL RESEARCHER DOSSIER →
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Docked Drawer: Pipeline Tracker & Terminal Log -->
+    <div class="absolute left-0 right-0 bottom-0 border-t border-line bg-white/95 backdrop-blur-sm z-10 shadow-md">
+      <!-- Pipeline Stages Row -->
+      <div class="px-3 py-1.5 border-b border-line hidden sm:block">
+        <div id="pipeline-stages" class="flex items-center gap-1 flex-wrap text-2xs tracking-[0.1em] font-mono">
+          <span class="flex items-center gap-1 stage-item" data-stage="RESEARCH"><span class="text-faint">RESEARCH</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item" data-stage="HYPOTHESIS"><span class="text-faint">HYPOTHESIS</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item" data-stage="CANDIDATE"><span class="text-faint">CANDIDATE</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item active-stage" data-stage="SIMULATION"><span class="text-ink font-bold bg-term-bright px-1.5 py-0.5 border border-term-dark/50">SIMULATION</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item" data-stage="CRITIQUE"><span class="text-faint">CRITIQUE</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item" data-stage="VALIDATION"><span class="text-faint">VALIDATION</span><span class="text-line2">→</span></span>
+          <span class="flex items-center gap-1 stage-item" data-stage="ARCHIVE"><span class="text-faint">ARCHIVE</span></span>
+        </div>
+      </div>
+
+      <!-- Log Terminal Stream -->
+      <div id="lab-logs" class="h-24 sm:h-28 overflow-y-auto px-3 py-1.5 space-y-0.5 font-mono text-2xs select-text">
+        <div class="text-faint text-xs">awaiting backend events…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 3D LAB CONTROLLER SCRIPT ==================== -->
+  <script>
+    // Workstations definition matching original project486 N coordinates
+    const WORKSTATIONS = {
+      LITERATURE: { pos: [-9, 0, -6], label: "LITERATURE DESK", code: "LAB-02", color: "#35c3ad", title: "literature & prior art", desc: "Reads the archive and outside sources; consolidates references." },
+      DIRECTOR:   { pos: [0, 0, -6.5], label: "DIRECTOR · CONTROL", code: "LAB-01", color: "#5aa7f5", title: "research director", desc: "Plans beats, assigns work, decides what advances. Speaks rarely." },
+      SIMULATION: { pos: [9, 0, -6], label: "SIMULATION", code: "LAB-05", color: "#63bf6a", title: "computation & simulation", desc: "Runs and validates computations. Never overstates a result." },
+      HYPOTHESIS: { pos: [-9, 0, 1.5], label: "TERMINALS", code: "LAB-03", color: "#9b7cf6", title: "hypothesis formation", desc: "Turns gaps into falsifiable, testable statements." },
+      MATERIALS:  { pos: [0, 0, 1.5], label: "MOLECULAR BENCH", code: "LAB-04", color: "#e265a9", title: "materials design", desc: "Designs candidate structures from hypotheses." },
+      ARCHIVE:    { pos: [9, 0, 1.5], label: "ARCHIVE", code: "LAB-07", color: "#9aa3b2", title: "archive & memory", desc: "Preserves provenance; curates long-term project memory." },
+      CRITIC:     { pos: [0, 0, 7], label: "REVIEW TABLE", code: "LAB-06", color: "#e5a54e", title: "adversarial review", desc: "Tries to break every result before it advances." }
+    };
+
+    let scene, camera, renderer, controls;
+    let interactiveMeshes = [];
+    let raycaster, mouse;
+    let selectedAgent = null;
+
+    function init3DLab() {
+      const container = document.getElementById('canvas-container');
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf6f7f8);
+      scene.fog = new THREE.Fog(0xf6f7f8, 25, 60);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+      camera.position.set(0, 14, 21);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // 4. OrbitControls
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.05;
+      controls.maxPolarAngle = Math.PI / 2.15;
+      controls.minDistance = 8;
+      controls.maxDistance = 35;
+      controls.target.set(0, 1.2, 0);
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = 0.2;
+
+      // 5. Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe5e7eb, 0.45);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfffaed, 0.9);
+      dirLight.position.set(10, 20, 10);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      scene.add(dirLight);
+
+      // Accent colored pointlights
+      const pt1 = new THREE.PointLight(0x7c3aed, 0.4, 20); // violet
+      pt1.position.set(-8, 6, 4);
+      scene.add(pt1);
+
+      const pt2 = new THREE.PointLight(0xeab308, 0.5, 20); // yellow
+      pt2.position.set(8, 6, 4);
+      scene.add(pt2);
+
+      // 6. Floor with Clean Grid
+      const floorGeo = new THREE.PlaneGeometry(38, 30);
+      const floorMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0.05 });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      const gridHelper = new THREE.GridHelper(38, 38, 0xd1d5db, 0xe5e7eb);
+      gridHelper.position.y = 0.01;
+      scene.add(gridHelper);
+
+      // 7. Back Wall & Architecture
+      const backWallGeo = new THREE.BoxGeometry(38, 10, 0.5);
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xf1f3f5, roughness: 0.9 });
+      const backWall = new THREE.Mesh(backWallGeo, wallMat);
+      backWall.position.set(0, 5, -11);
+      backWall.receiveShadow = true;
+      scene.add(backWall);
+
+      // Floating Lattice Lab Neon Banner
+      createSign3D("LATTICE LAB", [0, 8.5, -10.7], 0xca8a04, 2.2);
+      createSign3D("VIRTUAL RESEARCH OPERATING SYSTEM", [0, 7.2, -10.7], 0x4b5563, 0.9);
+
+      // Whiteboard with ab initio superconductivity notes
+      createWhiteboard([ -7, 4.2, -10.7 ]);
+
+      // 8. Build All 7 Workstations & Researchers
+      Object.keys(WORKSTATIONS).forEach(role => {
+        buildWorkstation(role, WORKSTATIONS[role]);
+      });
+
+      // Raycaster for clicks
+      raycaster = new THREE.Raycaster();
+      mouse = new THREE.Vector2();
+
+      renderer.domElement.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('resize', onWindowResize);
+
+      // Remove loader
+      const loader = document.getElementById('lab-loader');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.style.display = 'none', 300);
+      }
+
+      animate();
+    }
+
+    // 3D Canvas Sign helper
+    function createSign3D(text, pos, colorHex, scale) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1024;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#' + colorHex.toString(16).padStart(6, '0');
+      ctx.font = 'bold 50px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.letterSpacing = '10px';
+      ctx.fillText(text, 512, 64);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const plane = new THREE.Mesh(new THREE.PlaneGeometry(12 * (scale / 1.5), 1.5 * (scale / 1.5)), mat);
+      plane.position.set(...pos);
+      scene.add(plane);
+    }
+
+    function createWhiteboard(pos) {
+      const wb = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 3.5, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+      );
+      wb.position.set(...pos);
+      scene.add(wb);
+
+      // Frame
+      const frame = new THREE.Mesh(
+        new THREE.BoxGeometry(7.2, 3.7, 0.05),
+        new THREE.MeshStandardMaterial({ color: 0xd1d5db })
+      );
+      frame.position.set(pos[0], pos[1], pos[2] - 0.03);
+      scene.add(frame);
+    }
+
+    // Build Workstation Desks, Monitors, and 3D Researcher character
+    function buildWorkstation(role, data) {
+      const group = new THREE.Group();
+      group.position.set(...data.pos);
+
+      // Desk Tabletop
+      const deskMat = new THREE.MeshStandardMaterial({ color: 0xe5e7eb, roughness: 0.6 });
+      const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.15, 1.8), deskMat);
+      deskTop.position.y = 1.4;
+      deskTop.castShadow = true;
+      deskTop.receiveShadow = true;
+      group.add(deskTop);
+
+      // Desk Legs
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x9ca3af, metalness: 0.4 });
+      [ [-1.6, 0.7, -0.7], [1.6, 0.7, -0.7], [-1.6, 0.7, 0.7], [1.6, 0.7, 0.7] ].forEach(p => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.4), legMat);
+        leg.position.set(...p);
+        leg.castShadow = true;
+        group.add(leg);
+      });
+
+      // Terminal Monitors
+      const monStand = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.4, 0.2), legMat);
+      monStand.position.set(0, 1.65, -0.2);
+      group.add(monStand);
+
+      const monScreen = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 0.9, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.3 })
+      );
+      monScreen.position.set(0, 2.1, -0.2);
+      monScreen.castShadow = true;
+      group.add(monScreen);
+
+      // Glowing screen display face
+      const screenGlow = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.5, 0.8),
+        new THREE.MeshBasicMaterial({ color: new THREE.Color(data.color).multiplyScalar(0.7) })
+      );
+      screenGlow.position.set(0, 2.1, -0.15);
+      group.add(screenGlow);
+
+      // Workstation 3D Label Plaque
+      const labelCanvas = document.createElement('canvas');
+      labelCanvas.width = 512;
+      labelCanvas.height = 64;
+      const lctx = labelCanvas.getContext('2d');
+      lctx.fillStyle = '#111827';
+      lctx.font = 'bold 32px "JetBrains Mono", monospace';
+      lctx.textAlign = 'center';
+      lctx.textBaseline = 'middle';
+      lctx.fillText(`${data.code} · ${data.label}`, 256, 32);
+
+      const ltex = new THREE.CanvasTexture(labelCanvas);
+      const lmesh = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.35), new THREE.MeshBasicMaterial({ map: ltex, transparent: true }));
+      lmesh.position.set(0, 2.8, -0.2);
+      group.add(lmesh);
+
+      // 3D RESEARCHER MODEL (Head + Labcoat Body + Badge)
+      const agentGroup = new THREE.Group();
+      agentGroup.position.set(0, 0, 1.35); // in front of desk facing it
+
+      // Labcoat Body
+      const coatGeo = new THREE.CylinderGeometry(0.35, 0.5, 1.3, 16);
+      const coatMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+      const coat = new THREE.Mesh(coatGeo, coatMat);
+      coat.position.y = 1.35;
+      coat.castShadow = true;
+      agentGroup.add(coat);
+
+      // Badge on chest with agent color
+      const badge = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18, 0.22, 0.05),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(data.color) })
+      );
+      badge.position.set(-0.2, 1.6, 0.42);
+      agentGroup.add(badge);
+
+      // Characteristic Shape Head based on role
+      let headGeo;
+      if (role === 'DIRECTOR') headGeo = new THREE.SphereGeometry(0.4, 20, 20);
+      else if (role === 'LITERATURE') headGeo = new THREE.CylinderGeometry(0.42, 0.42, 0.5, 6);
+      else if (role === 'HYPOTHESIS') headGeo = new THREE.ConeGeometry(0.45, 0.8, 4);
+      else if (role === 'MATERIALS') headGeo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+      else if (role === 'SIMULATION') headGeo = new THREE.DodecahedronGeometry(0.45);
+      else if (role === 'CRITIC') headGeo = new THREE.CylinderGeometry(0.45, 0.3, 0.7, 5);
+      else headGeo = new THREE.BoxGeometry(0.7, 0.5, 0.7); // ARCHIVE
+
+      const headMat = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(data.color),
+        roughness: 0.4,
+        metalness: 0.1
+      });
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.y = 2.4;
+      head.castShadow = true;
+      agentGroup.add(head);
+
+      // Floating status indicator ring
+      const ringGeo = new THREE.RingGeometry(0.55, 0.65, 24);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xca8a04, side: THREE.DoubleSide });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 3.1;
+      agentGroup.add(ring);
+
+      agentGroup.userData = { role, data };
+      interactiveMeshes.push(agentGroup);
+      group.add(agentGroup);
+
+      scene.add(group);
+    }
+
+    function onPointerDown(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(interactiveMeshes, true);
+
+      if (intersects.length > 0) {
+        // Find top agent group
+        let obj = intersects[0].object;
+        while (obj.parent && !obj.userData.role) {
+          obj = obj.parent;
+        }
+        if (obj.userData && obj.userData.role) {
+          openInspector(obj.userData.data);
+        }
+      }
+    }
+
+    function openInspector(agentData) {
+      selectedAgent = agentData;
+      document.getElementById('inspect-code').textContent = agentData.code;
+      document.getElementById('inspect-role').textContent = agentData.role;
+      document.getElementById('inspect-title').textContent = agentData.title;
+      document.getElementById('inspect-desc').textContent = agentData.desc;
+      document.getElementById('inspect-station').textContent = agentData.label;
+      document.getElementById('inspect-full-link').href = `/agents/${agentData.code.toLowerCase()}`;
+
+      // Populate dummy or live logs
+      const logBox = document.getElementById('inspect-logs');
+      logBox.innerHTML = `
+        <div class="text-faint">[${new Date().toLocaleTimeString()}] Synchronized with research loop.</div>
+        <div class="text-ink font-semibold">Active beat: Supercell Eliashberg verification.</div>
+        <div class="text-dim">Latest artifact: validated against DFT density matrix.</div>
+      `;
+
+      document.getElementById('inspector-drawer').classList.remove('hidden');
+    }
+
+    function closeInspector() {
+      document.getElementById('inspector-drawer').classList.add('hidden');
+      selectedAgent = null;
+    }
+
+    function onWindowResize() {
+      const container = document.getElementById('canvas-container');
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+
+    let clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const delta = clock.getDelta();
+      const time = clock.getElapsedTime();
+
+      // Gentle breathing/bobbing for researchers
+      interactiveMeshes.forEach((ag, idx) => {
+        ag.position.y = Math.sin(time * 2 + idx) * 0.05;
+      });
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    // Connect to SSE stream
+    function initEventStream() {
+      if (!window.EventSource) return;
+      const es = new EventSource('/api/events');
+      const dot = document.getElementById('stream-dot');
+      const statusText = document.getElementById('stream-status');
+      const logContainer = document.getElementById('lab-logs');
+
+      es.onopen = () => {
+        if (dot) dot.className = 'inline-block w-1.5 h-1.5 rounded-full bg-term animate-pulseline';
+        if (statusText) statusText.textContent = 'live';
+      };
+
+      es.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.type === 'agent_log') {
+            const row = document.createElement('div');
+            row.className = 'text-xs text-dim leading-tight flex items-baseline gap-2';
+            row.innerHTML = `<span class="text-faint shrink-0">[${new Date().toLocaleTimeString()}]</span> <span class="text-ink font-semibold">[${d.payload.agent}]</span> <span>${d.payload.message}</span>`;
+            logContainer.appendChild(row);
+            logContainer.scrollTop = logContainer.scrollHeight;
+          } else if (d.type === 'pipeline_progress') {
+            updatePipelineStage(d.payload.stage);
+          }
+        } catch (err) {}
+      };
+
+      es.onerror = () => {
+        if (dot) dot.className = 'inline-block w-1.5 h-1.5 rounded-full bg-faint';
+        if (statusText) statusText.textContent = 'reconnecting';
+      };
+    }
+
+    function updatePipelineStage(stage) {
+      const items = document.querySelectorAll('.stage-item');
+      items.forEach(el => {
+        const s = el.getAttribute('data-stage');
+        const span = el.querySelector('span:first-child');
+        if (s === stage) {
+          span.className = 'text-ink font-bold bg-term-bright px-1.5 py-0.5 border border-term-dark/50';
+        } else {
+          span.className = 'text-faint';
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      init3DLab();
+      initEventStream();
+    });
+  </script>
+</body>
+</html>

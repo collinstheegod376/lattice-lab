@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LATTICE LAB — Virtual Lab</title>
+  <meta name="description" content="A multi-agent research operating system for materials science." />
+
+  <!-- Google Fonts: STIX Two Text & Monospace -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;500;600&family=Orbitron:wght@600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#ffffff',
+            panel: '#ffffff',
+            panel2: '#f8f9fa',
+            panel3: '#f1f3f5',
+            line: '#e5e7eb',
+            line2: '#d1d5db',
+            ink: '#111827',
+            dim: '#4b5563',
+            faint: '#6b7280',
+            term: '#eab308', // Modern vibrant yellow
+            'term-bright': '#facc15',
+            'term-dark': '#ca8a04',
+            termdim: '#854d0e',
+            violet: '#7c3aed',
+            violetdim: '#c4b5fd',
+            warn: '#d97706',
+            fail: '#dc2626'
+          },
+          fontSize: {
+            '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+            system: ['STIX Two Text', 'Times New Roman', 'Georgia', 'serif'],
+            math: ['STIX Two Text', 'Times New Roman', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: light;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      padding: 0;
+      margin: 0;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    /* Light mathematical grid background */
+    body {
+      background-image: 
+        linear-gradient(rgba(234, 179, 8, 0.05) 1px, transparent 0),
+        linear-gradient(90deg, rgba(234, 179, 8, 0.05) 1px, transparent 0);
+      background-size: 40px 40px;
+      background-position: -1px -1px;
+    }
+
+    ::selection {
+      background: rgba(250, 204, 21, 0.35);
+      color: #111827;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f8f9fa;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9ca3af;
+    }
+
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .font-system, .font-system :not(.keep-mono) {
+      font-family: 'STIX Two Text', 'Times New Roman', Georgia, serif;
+    }
+    .font-math, .font-math * {
+      font-family: 'STIX Two Text', 'Times New Roman', serif;
+    }
+    .font-system .keep-mono, .font-system .keep-mono * {
+      font-family: var(--font-mono);
+    }
+
+    @keyframes term-blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .term-caret {
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      background: #eab308;
+      animation: term-blink 1.05s infinite;
+    }
+
+    .cursor:after {
+      content: "";
+      display: inline-block;
+      width: 7px;
+      height: 14px;
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      background: #eab308;
+      animation: term-blink 1.1s infinite;
+    }
+
+    @keyframes pulseline {
+      0%, 100% { opacity: 0.35; }
+      50% { opacity: 1; }
+    }
+    .animate-pulseline {
+      animation: pulseline 1.8s ease-in-out infinite;
+    }
+
+    /* Subtle yellow glow for interactive points */
+    .glow-yellow {
+      box-shadow: 0 0 12px rgba(234, 179, 8, 0.45);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-base text-ink">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="relative border-b border-line px-3 sm:px-4 h-11 flex items-center gap-2 sm:gap-3 shrink-0 bg-base z-30">
+    <!-- Brand Logo -->
+    <a class="shrink-0 flex items-center gap-2 group" aria-label="LATTICE LAB home" href="/">
+      <div class="w-6 h-6 border border-ink/80 flex items-center justify-center bg-term-bright/20 group-hover:bg-term-bright/40 transition">
+        <svg class="w-4 h-4 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      <span class="font-mono font-bold text-xs tracking-[0.16em] text-ink select-none">LATTICE LAB</span>
+    </a>
+
+    <!-- Desktop Navigation -->
+    <nav class="hidden sm:flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-medium" href="/">HOME</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="#lab-section">LAB</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="#program-section">RESEARCH</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="#archive-section">ARCHIVE</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="#agents-section">AGENTS</a>
+    </nav>
+
+    <!-- Mobile Mini Nav -->
+    <nav class="flex sm:hidden items-center gap-1 min-w-0">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-medium" href="#lab-section">LAB</a>
+    </nav>
+
+    <!-- Right Controls -->
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+      <!-- Operator Button -->
+      <button onclick="toggleOperatorModal()" class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-dim border-line hover:text-ink hover:border-line2 bg-panel hover:bg-term-bright/10 transition inline-flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-term animate-pulse"></span>
+        OPERATOR
+      </button>
+
+      <span class="w-px h-4 bg-line mx-0.5 hidden sm:block"></span>
+
+      <!-- Social / Scholarly Links -->
+      <a href="https://x.com" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on X" class="text-faint hover:text-ink p-1 transition" title="X (Twitter)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path>
+        </svg>
+      </a>
+
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" aria-label="Lattice paper on arXiv" class="hover:opacity-80 transition px-1 py-0.5 border border-transparent hover:border-line" title="arXiv:2601.00931">
+        <span aria-hidden="true" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; line-height: 1; white-space: nowrap">
+          <span style="color: #4b5563">ar</span><span style="color: #b31b1b; position: relative; top: 0.13em">X</span><span style="color: #4b5563">iv</span>
+        </span>
+      </a>
+
+      <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on GitHub" class="text-faint hover:text-ink p-1 transition" title="GitHub Repository">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .321.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path>
+        </svg>
+      </a>
+
+      <!-- Mobile menu button -->
+      <button onclick="toggleMobileNav()" aria-label="menu" class="sm:hidden shrink-0 w-8 h-8 flex flex-col items-center justify-center gap-[4px] border border-line text-dim hover:text-ink">
+        <span class="block w-4 h-[2px] bg-current"></span>
+        <span class="block w-4 h-[2px] bg-current"></span>
+        <span class="block w-4 h-[2px] bg-current"></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Dropdown Nav Menu -->
+  <div id="mobile-nav" class="hidden sm:hidden border-b border-line bg-panel2 p-3 space-y-2 text-2xs tracking-[0.14em]">
+    <a class="block px-3 py-1.5 border border-line2 bg-white text-ink" href="/">HOME</a>
+    <a class="block px-3 py-1.5 border border-line text-dim hover:text-ink" href="#lab-section">LAB</a>
+    <a class="block px-3 py-1.5 border border-line text-dim hover:text-ink" href="#program-section">RESEARCH</a>
+    <a class="block px-3 py-1.5 border border-line text-dim hover:text-ink" href="#archive-section">ARCHIVE</a>
+    <a class="block px-3 py-1.5 border border-line text-dim hover:text-ink" href="#agents-section">AGENTS</a>
+    <button onclick="toggleOperatorModal()" class="w-full text-left px-3 py-1.5 border border-term bg-term-bright/20 text-ink font-semibold">ENTER OPERATOR CONSOLE</button>
+  </div>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-1 flex flex-col">
+    <div class="flex-1 overflow-y-auto font-system">
+      <div class="mx-auto w-full max-w-5xl px-5 sm:px-8 py-10 sm:py-14">
+
+        <!-- 1. Hero Artwork: animated binary-digit robot (blinks) with LATTICELAB behind it -->
+        <div class="border border-line bg-white shadow-sm overflow-hidden relative">
+          <canvas id="hero-robot" role="img" aria-label="LATTICELAB — a robot made of binary code" class="block w-full select-none" style="aspect-ratio: 1280 / 511; filter: invert(1) hue-rotate(180deg) brightness(1.05);"></canvas>
+          <noscript>
+            <img src="/home-hero.jpg" alt="LATTICE LAB" class="block w-full h-auto select-none" draggable="false" style="filter: invert(1) hue-rotate(180deg) brightness(1.05);" />
+          </noscript>
+        </div>
+        <script src="/hero-robot.js" defer></script>
+
+        <!-- 2. Research Operating System Intro -->
+        <div class="mt-8 sm:mt-10">
+          <div class="text-2xs text-faint tracking-[0.2em] mb-3 uppercase font-medium">RESEARCH OPERATING SYSTEM</div>
+          <p class="text-ink text-sm sm:text-[15px] leading-relaxed max-w-3xl">
+            LATTICE LAB is a virtual laboratory. Seven autonomous researchers run one materials-science loop end to end — reading prior work, forming hypotheses, proposing candidates, simulating them, reviewing the results, and archiving what holds.
+          </p>
+          <p class="text-dim text-xs sm:text-sm leading-relaxed max-w-3xl mt-3">
+            Each researcher is an independent agent responsible for a single stage. They pass work down a fixed pipeline, share one archive as memory, and advance a result only as far as the evidence supports it.
+          </p>
+          
+          <!-- Call to Action Buttons (Yellow Primary Accent, High-Contrast Text) -->
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <a class="px-4 py-2 bg-term-bright hover:bg-term text-ink font-semibold border border-term-dark/30 text-2xs tracking-[0.18em] transition shadow-sm" href="#lab-section">
+              ENTER LAB →
+            </a>
+            <a class="px-4 py-2 border border-line text-dim text-2xs tracking-[0.18em] hover:text-ink hover:border-line2 bg-white hover:bg-panel2 transition" href="#program-section">
+              RESEARCH
+            </a>
+            <a class="px-4 py-2 border border-line text-dim text-2xs tracking-[0.18em] hover:text-ink hover:border-line2 bg-white hover:bg-panel2 transition" href="#archive-section">
+              ARCHIVE
+            </a>
+          </div>
+        </div>
+
+        <!-- 3. Current Program Section -->
+        <div id="program-section" class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">CURRENT PROGRAM</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+
+          <div class="flex items-baseline gap-3 mb-3">
+            <span class="text-ink text-2xs tracking-[0.16em] font-semibold">RESEARCH #001</span>
+            <a class="text-2xs tracking-[0.16em] text-faint hover:text-ink transition" href="#paper-section">OPEN RESEARCH →</a>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+              <span class="label">LATTICE-01 · AI-GUIDED SUPERCONDUCTOR CANDIDATE</span>
+              <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" title="View the paper on arXiv" class="inline-flex items-center gap-1.5 border border-line px-2 py-1 hover:border-line2 hover:bg-panel2 bg-white transition">
+                <span aria-hidden="true" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; line-height: 1; letter-spacing: 0.01em; white-space: nowrap">
+                  <span style="color: #4b5563">ar</span><span style="color: #b31b1b; position: relative; top: 0.13em">X</span><span style="color: #4b5563">iv</span>
+                </span>
+                <span class="text-faint text-2xs">2601.00931</span>
+              </a>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Computational Figures Display: 1:1 Live Site Image Asset -->
+              <figure>
+                <div class="border border-line bg-white p-2 overflow-hidden shadow-sm">
+                  <img src="/grokene-figures.jpg" alt="Lattice Lab computational figures: atomic structure; electronic band structure and density of states; Eliashberg spectral function α²F(ω); superconducting gap function Δ(ω); superfluid stiffness and BKT transition; and static susceptibility map χ₀(q)." class="block w-full h-auto select-none" draggable="false" />
+                </div>
+                <figcaption class="text-faint text-[11px] leading-snug mt-1.5">
+                  <span class="text-dim">Figures 1–6</span> — atomic structure; band structure &amp; DOS; Eliashberg <span class="font-math">α²F(ω)</span>; gap function <span class="font-math">Δ(ω)</span>; superfluid stiffness &amp; <span class="font-math">T_BKT</span>; static susceptibility <span class="font-math">χ₀(q)</span>. <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" class="text-ink hover:underline">source →</a>
+                </figcaption>
+              </figure>
+
+              <p class="text-dim text-sm leading-relaxed max-w-3xl">
+                Lattice-01 is a room-temperature, ambient-pressure superconductor <span class="text-ink font-semibold">candidate</span> from an AI-guided materials search — a potassium-doped graphene superlattice (4×4 supercell, ~6.25 at.% interstitial K, P6/m symmetry).
+              </p>
+              <p class="text-dim text-xs leading-relaxed max-w-3xl">
+                Autonomous LLM agents proposed the initial structures and candidate directions; each candidate is then tested with first-principles methods — DFPT/EPW electron–phonon coupling, Eliashberg theory, and RPA susceptibility.
+              </p>
+
+              <!-- Parameter Metric Cards -->
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl">
+                <div class="border border-line bg-white p-3 hover:border-term transition shadow-sm">
+                  <div class="text-ink text-lg leading-none font-math font-semibold">≈ 3.8</div>
+                  <div class="text-ink text-xs mt-1 font-math font-bold">λ</div>
+                  <div class="text-faint text-[10px] leading-tight mt-0.5">electron–phonon coupling</div>
+                </div>
+                <div class="border border-line bg-white p-3 hover:border-term transition shadow-sm">
+                  <div class="text-ink text-lg leading-none font-math font-semibold">≈ 1650 K</div>
+                  <div class="text-ink text-xs mt-1 font-math font-bold">ω_log</div>
+                  <div class="text-faint text-[10px] leading-tight mt-0.5">log-avg phonon frequency</div>
+                </div>
+                <div class="border border-line bg-white p-3 hover:border-term transition shadow-sm">
+                  <div class="text-ink text-lg leading-none font-math font-semibold">≈ 310 K</div>
+                  <div class="text-ink text-xs mt-1 font-math font-bold">Tc</div>
+                  <div class="text-faint text-[10px] leading-tight mt-0.5">Eliashberg (predicted)</div>
+                </div>
+                <div class="border border-line bg-white p-3 hover:border-term transition shadow-sm">
+                  <div class="text-ink text-lg leading-none font-math font-semibold">≈ 120 K</div>
+                  <div class="text-ink text-xs mt-1 font-math font-bold">T_BKT</div>
+                  <div class="text-faint text-[10px] leading-tight mt-0.5">2D transition (BKT)</div>
+                </div>
+              </div>
+
+              <!-- Technical Verification Disclaimers -->
+              <p class="text-faint text-xs leading-relaxed max-w-3xl">
+                These are computational predictions for a candidate structure. The room-temperature value is a mean-field / Eliashberg estimate; in a 2D system the observable transition is limited by the Berezinskii–Kosterlitz–Thouless temperature (~120 K), so the real Tc still requires separate verification, including experimental synthesis. Lattice-01 is a proposed candidate, not a confirmed superconductor.
+              </p>
+              <p class="text-faint text-xs leading-relaxed max-w-3xl">
+                The work is published openly on arXiv, with data and results shared for independent verification.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Paper Section with Interactive Multi-Page Carousel -->
+        <div id="paper-section" class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">PAPER</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+
+          <div>
+            <div class="flex items-center justify-between gap-3 mb-3 flex-wrap">
+              <span class="label truncate font-medium">AI-GUIDED DESIGN OF A SUPERCONDUCTOR CANDIDATE: LATTICE-01</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" title="View paper on arXiv" class="inline-flex items-center gap-1.5 border border-line px-2 py-0.5 hover:border-line2 hover:bg-panel2 bg-white transition">
+                  <span aria-hidden="true" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; line-height: 1; letter-spacing: 0.01em; white-space: nowrap">
+                    <span style="color: #4b5563">ar</span><span style="color: #b31b1b; position: relative; top: 0.13em">X</span><span style="color: #4b5563">iv</span>
+                  </span>
+                </a>
+                <a href="https://arxiv.org/pdf/2601.00931" target="_blank" rel="noopener noreferrer" class="text-2xs tracking-[0.1em] text-faint hover:text-ink border border-line px-2 py-0.5 bg-white transition">
+                  PDF ↗
+                </a>
+              </div>
+            </div>
+
+            <!-- Paper Viewer Window (Authentic arXiv Pages) -->
+            <div class="bg-white border border-line shadow-sm overflow-hidden p-4 sm:p-6">
+              <div class="relative w-full max-w-2xl mx-auto border border-line bg-panel2 p-2 sm:p-3 shadow-inner rounded-sm">
+                <img id="paper-img" src="/paper/p01.jpg" alt="Lattice Lab Preprint Page 1" class="w-full h-auto object-contain block mx-auto border border-line/60 bg-white shadow-sm" />
+              </div>
+
+              <!-- Page Control Bar -->
+              <div class="flex items-center justify-between mt-4 pt-3 border-t border-line">
+                <button id="prev-page-btn" onclick="prevPaperPage()" disabled class="px-3 py-1 text-2xs tracking-[0.14em] border border-line text-dim hover:text-ink hover:border-line2 bg-white disabled:opacity-30 disabled:pointer-events-none transition font-mono">
+                  ‹ PREV
+                </button>
+                <div class="flex items-center gap-3">
+                  <span id="page-counter" class="text-faint text-2xs tabular-nums tracking-[0.12em] font-mono">1 / 15</span>
+                  <select id="paper-page-select" onchange="goToPaperPage(parseInt(this.value, 10))" class="bg-panel2 border border-line text-xs font-mono px-2 py-0.5 text-ink focus:outline-none focus:border-term cursor-pointer">
+                    <option value="1">Page 1</option>
+                    <option value="2">Page 2</option>
+                    <option value="3">Page 3</option>
+                    <option value="4">Page 4</option>
+                    <option value="5">Page 5</option>
+                    <option value="6">Page 6</option>
+                    <option value="7">Page 7</option>
+                    <option value="8">Page 8</option>
+                    <option value="9">Page 9</option>
+                    <option value="10">Page 10</option>
+                    <option value="11">Page 11</option>
+                    <option value="12">Page 12</option>
+                    <option value="13">Page 13</option>
+                    <option value="14">Page 14</option>
+                    <option value="15">Page 15</option>
+                  </select>
+                </div>
+                <button id="next-page-btn" onclick="nextPaperPage()" class="px-3 py-1 text-2xs tracking-[0.14em] border border-line text-dim hover:text-ink hover:border-line2 bg-white disabled:opacity-30 disabled:pointer-events-none transition font-mono">
+                  NEXT ›
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Validation Pipeline Section -->
+        <div class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">VALIDATION</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+          <div>
+            <div class="flex flex-wrap items-center gap-2 text-2xs tracking-[0.12em] font-mono">
+              <span class="flex items-center gap-2">
+                <span class="text-dim font-semibold">HYPOTHESIS</span>
+                <span class="text-line2">›</span>
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="text-dim font-semibold">SIMULATED</span>
+                <span class="text-line2">›</span>
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="text-ink bg-term-bright/30 px-1.5 py-0.5 border border-term-dark/40 font-bold">COMPUTATIONALLY VALIDATED</span>
+                <span class="text-line2">›</span>
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="text-faint">EXPERIMENTALLY VALIDATED</span>
+              </span>
+            </div>
+            <p class="text-faint text-xs mt-3 max-w-3xl">
+              Every claim carries the exact level of evidence behind it — no candidate is described as validated beyond the stage it has actually reached.
+            </p>
+          </div>
+        </div>
+
+        <!-- 6. Pipeline Flow Section -->
+        <div class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">PIPELINE</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+          <div>
+            <div id="pipeline-stages" class="flex items-center gap-1 flex-wrap text-2xs tracking-[0.1em] text-xs sm:text-sm font-mono">
+              <!-- Rendered with live active stage highlighting -->
+              <span class="flex items-center gap-1 stage-item" data-stage="RESEARCH"><span class="text-dim">RESEARCH</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item" data-stage="HYPOTHESIS"><span class="text-dim">HYPOTHESIS</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item" data-stage="CANDIDATE"><span class="text-dim">CANDIDATE</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item active-stage" data-stage="SIMULATION"><span class="text-ink font-bold bg-term-bright px-1.5 py-0.5 border border-term-dark/50">SIMULATION</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item" data-stage="CRITIQUE"><span class="text-dim">CRITIQUE</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item" data-stage="VALIDATION"><span class="text-dim">VALIDATION</span><span class="text-line2">→</span></span>
+              <span class="flex items-center gap-1 stage-item" data-stage="ARCHIVE"><span class="text-dim">ARCHIVE</span></span>
+            </div>
+            <p class="text-faint text-xs mt-3">
+              Every result moves through these stages in order. Work only advances when the stage before it is satisfied.
+            </p>
+          </div>
+        </div>
+
+        <!-- 7. Researchers Section (7 Autonomous Agents) -->
+        <div id="agents-section" class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">RESEARCHERS</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+
+          <div id="researchers-roster" class="grid grid-cols-1 sm:grid-cols-2 sm:gap-x-8 bg-white border border-line p-2 sm:p-4 shadow-sm">
+            <!-- 01 DIRECTOR -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-01</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">DIRECTOR</span>
+              <span class="text-dim text-xs truncate flex-1">research director</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="DIRECTOR">MESSAGING</span>
+            </div>
+            <!-- 02 LITERATURE -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-02</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">LITERATURE</span>
+              <span class="text-dim text-xs truncate flex-1">literature & prior art</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="LITERATURE">MESSAGING</span>
+            </div>
+            <!-- 03 HYPOTHESIS -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-03</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">HYPOTHESIS</span>
+              <span class="text-dim text-xs truncate flex-1">hypothesis formation</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="HYPOTHESIS">MESSAGING</span>
+            </div>
+            <!-- 04 MATERIALS -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-04</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">MATERIALS</span>
+              <span class="text-dim text-xs truncate flex-1">materials design</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="MATERIALS">MESSAGING</span>
+            </div>
+            <!-- 05 SIMULATION -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-05</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">SIMULATION</span>
+              <span class="text-dim text-xs truncate flex-1">computation & simulation</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-term-bright/30 text-ink border-term shrink-0 font-bold" data-agent="SIMULATION">SIMULATING</span>
+            </div>
+            <!-- 06 CRITIC -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-06</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">CRITIC</span>
+              <span class="text-dim text-xs truncate flex-1">adversarial review</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="CRITIC">REVIEWING</span>
+            </div>
+            <!-- 07 ARCHIVE -->
+            <div class="flex items-baseline gap-4 py-2.5 border-b border-line">
+              <span class="text-dim text-[15px] w-16 shrink-0 font-mono tabular-nums">LAB-07</span>
+              <span class="text-ink text-sm w-28 shrink-0 tracking-[0.06em] font-semibold">ARCHIVE</span>
+              <span class="text-dim text-xs truncate flex-1">archive & memory</span>
+              <span class="agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0" data-agent="ARCHIVE">IDLE</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Interactive Live Lab Terminal Stream (Connected to Backend) -->
+        <div id="lab-section" class="mt-12">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <span class="label">LIVE LAB EVENT STREAM</span>
+              <span class="inline-flex items-center gap-1.5 px-2 py-0.5 text-2xs bg-term-bright/20 border border-term text-ink font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-term animate-ping"></span>
+                <span id="backend-status-indicator">BACKEND SYNCED</span>
+              </span>
+            </div>
+            <button onclick="triggerPipelineCycle()" class="px-2.5 py-1 text-2xs tracking-[0.14em] border border-line bg-white hover:bg-term-bright/20 hover:border-term text-dim hover:text-ink font-mono transition">
+              TRIGGER CYCLE ↻
+            </button>
+          </div>
+
+          <div class="border border-line bg-gray-900 text-gray-100 rounded-sm overflow-hidden font-mono text-xs shadow-md">
+            <div class="bg-gray-800 px-3 py-1.5 border-b border-gray-700 flex items-center justify-between text-2xs text-gray-400">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span>
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+                <span class="ml-2 text-gray-300">lattice-lab: daemon-cluster-01 [SSE /api/events]</span>
+              </div>
+              <span id="stream-time" class="text-gray-400">CONNECTING...</span>
+            </div>
+            <div id="lab-terminal-logs" class="p-4 h-48 overflow-y-auto space-y-1.5 text-2xs leading-relaxed select-text">
+              <div class="text-gray-400">[SYSTEM] Initializing Lattice Lab research operating system...</div>
+              <div class="text-yellow-400 font-semibold">[DIRECTOR] Multi-agent orchestration loop active. Current target: LATTICE-01.</div>
+              <div class="text-gray-300">[SIMULATION] Loading DFPT Eliashberg kernel: integration mesh 32x32x1...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. Archive History Section -->
+        <div id="archive-section" class="mt-12">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="label">MEMORY ARCHIVE</span>
+            <span class="h-px flex-1 bg-line"></span>
+          </div>
+
+          <div class="border border-line bg-white overflow-hidden shadow-sm">
+            <div class="p-3 bg-panel2 border-b border-line flex items-center justify-between text-2xs">
+              <span class="font-mono text-dim font-medium">RESEARCH ARTIFACTS COMMITTED TO MEMORY</span>
+              <span class="text-faint">IMMUTABLE LOG</span>
+            </div>
+            <div id="archive-table" class="divide-y divide-line text-xs font-mono">
+              <div class="p-3 flex items-center justify-between hover:bg-gray-50">
+                <div class="flex items-center gap-3">
+                  <span class="text-dim text-2xs">ART-01</span>
+                  <span class="text-ink font-medium">Electronic Band Structure & DOS</span>
+                </div>
+                <span class="text-2xs bg-term-bright/30 border border-term text-ink px-1.5 py-0.5 font-semibold">VALIDATED</span>
+              </div>
+              <div class="p-3 flex items-center justify-between hover:bg-gray-50">
+                <div class="flex items-center gap-3">
+                  <span class="text-dim text-2xs">ART-02</span>
+                  <span class="text-ink font-medium">Phonon Dispersion & Eliashberg Function α²F(ω)</span>
+                </div>
+                <span class="text-2xs bg-term-bright/30 border border-term text-ink px-1.5 py-0.5 font-semibold">VALIDATED</span>
+              </div>
+              <div class="p-3 flex items-center justify-between hover:bg-gray-50">
+                <div class="flex items-center gap-3">
+                  <span class="text-dim text-2xs">ART-03</span>
+                  <span class="text-ink font-medium">Anisotropic Superconducting Gap Equation Δ(ω)</span>
+                </div>
+                <span class="text-2xs bg-term-bright/30 border border-term text-ink px-1.5 py-0.5 font-semibold">VALIDATED</span>
+              </div>
+              <div class="p-3 flex items-center justify-between hover:bg-gray-50">
+                <div class="flex items-center gap-3">
+                  <span class="text-dim text-2xs">ART-04</span>
+                  <span class="text-ink font-medium">BKT Superfluid Stiffness & Transition Temperature</span>
+                </div>
+                <span class="text-2xs bg-panel2 border border-line text-dim px-1.5 py-0.5">THEORETICAL BOUND</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-12 text-2xs text-faint tracking-[0.14em] uppercase font-mono">
+          LATTICE LAB · research operating system
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-line px-4 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-2xs text-faint bg-base shrink-0 z-30 font-mono">
+    <span>LATTICE LAB · research operating system</span>
+    <span class="text-termdim">SIMULATED LAB · Computational predictions, verified by multi-agent loop</span>
+  </footer>
+
+  <!-- ==================== OPERATOR MODAL (Passphrase & Trigger) ==================== -->
+  <div id="operator-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-md border border-line bg-white p-6 shadow-xl relative font-mono">
+      <button onclick="toggleOperatorModal()" class="absolute top-3 right-3 text-faint hover:text-ink text-sm">✕</button>
+
+      <div class="label mb-1">OPERATOR ACCESS</div>
+      <p class="text-faint text-2xs mb-4 leading-relaxed">
+        Protected interface for Lattice Lab cluster. Demo passphrase: <span class="text-ink font-bold bg-yellow-100 px-1 py-0.5">lattice-operator</span>
+      </p>
+
+      <form id="operator-form" onsubmit="handleOperatorAuth(event)" class="space-y-3">
+        <div>
+          <label class="block text-2xs text-dim mb-1">CLUSTER PASSPHRASE</label>
+          <input type="password" id="operator-passphrase" placeholder="passphrase" value="lattice-operator" class="w-full bg-panel2 border border-line px-2.5 py-2 text-sm text-ink outline-none focus:border-term" />
+        </div>
+        <button type="submit" class="w-full bg-term-bright hover:bg-term text-ink font-semibold py-2 text-2xs tracking-[0.14em] transition border border-term-dark/40">
+          AUTHENTICATE OPERATOR
+        </button>
+      </form>
+
+      <!-- Authenticated Operator Controls -->
+      <div id="operator-controls" class="hidden mt-5 pt-4 border-t border-line space-y-3 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-ink font-semibold">STATUS: AUTHENTICATED</span>
+          <span class="text-2xs bg-green-100 text-green-800 px-2 py-0.5 rounded">SESSION ACTIVE</span>
+        </div>
+        <div class="space-y-2 pt-2">
+          <button onclick="triggerPipelineCycle()" class="w-full bg-panel2 hover:bg-white border border-line hover:border-line2 py-2 text-2xs tracking-[0.1em] text-ink font-medium transition text-left px-3">
+            ▶ ADVANCE PIPELINE STAGE
+          </button>
+          <button onclick="injectCandidate()" class="w-full bg-panel2 hover:bg-white border border-line hover:border-line2 py-2 text-2xs tracking-[0.1em] text-ink font-medium transition text-left px-3">
+            + INJECT NEW 2D MATERIAL CANDIDATE (LATTICE-02)
+          </button>
+        </div>
+      </div>
+      <div id="operator-error" class="hidden mt-3 text-2xs text-red-600 bg-red-50 p-2 border border-red-200"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- 1. Paper Viewer Pagination (15 arXiv Pages) ---
+    let currentPaperPage = 1;
+    const totalPaperPages = 15;
+
+    function updatePaperView() {
+      const img = document.getElementById('paper-img');
+      const counter = document.getElementById('page-counter');
+      const select = document.getElementById('paper-page-select');
+      const prevBtn = document.getElementById('prev-page-btn');
+      const nextBtn = document.getElementById('next-page-btn');
+
+      const pageStr = String(currentPaperPage).padStart(2, '0');
+      if (img) {
+        img.src = `/paper/p${pageStr}.jpg`;
+        img.alt = `Lattice Lab Preprint Page ${currentPaperPage}`;
+      }
+      if (counter) counter.textContent = `${currentPaperPage} / ${totalPaperPages}`;
+      if (select) select.value = String(currentPaperPage);
+      if (prevBtn) prevBtn.disabled = (currentPaperPage === 1);
+      if (nextBtn) nextBtn.disabled = (currentPaperPage === totalPaperPages);
+    }
+
+    function prevPaperPage() {
+      if (currentPaperPage > 1) {
+        currentPaperPage--;
+        updatePaperView();
+      }
+    }
+
+    function nextPaperPage() {
+      if (currentPaperPage < totalPaperPages) {
+        currentPaperPage++;
+        updatePaperView();
+      }
+    }
+
+    function goToPaperPage(p) {
+      if (p >= 1 && p <= totalPaperPages) {
+        currentPaperPage = p;
+        updatePaperView();
+      }
+    }
+
+    // --- 3. Operator Modal & Form ---
+    function toggleOperatorModal() {
+      const modal = document.getElementById('operator-modal');
+      modal.classList.toggle('hidden');
+      modal.classList.toggle('flex');
+    }
+
+    function toggleMobileNav() {
+      const nav = document.getElementById('mobile-nav');
+      nav.classList.toggle('hidden');
+    }
+
+    async function handleOperatorAuth(event) {
+      event.preventDefault();
+      const passphrase = document.getElementById('operator-passphrase').value;
+      const errorDiv = document.getElementById('operator-error');
+      const controls = document.getElementById('operator-controls');
+
+      try {
+        const res = await fetch('/api/operator/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passphrase })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          errorDiv.classList.add('hidden');
+          controls.classList.remove('hidden');
+        } else {
+          errorDiv.textContent = data.error || 'Invalid passphrase';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch (err) {
+        // Fallback for standalone file:// mode
+        if (passphrase === 'lattice-operator' || passphrase === 'lattice') {
+          errorDiv.classList.add('hidden');
+          controls.classList.remove('hidden');
+        } else {
+          errorDiv.textContent = 'Invalid passphrase. Demo passphrase is "lattice-operator"';
+          errorDiv.classList.remove('hidden');
+        }
+      }
+    }
+
+    // --- 4. Live Backend SSE & Fallback Simulator ---
+    const stages = ['RESEARCH', 'HYPOTHESIS', 'CANDIDATE', 'SIMULATION', 'CRITIQUE', 'VALIDATION', 'ARCHIVE'];
+    let currentStageIndex = 3;
+
+    function setPipelineStage(stageName) {
+      const container = document.getElementById('pipeline-stages');
+      if (!container) return;
+      const items = container.querySelectorAll('.stage-item');
+      items.forEach(el => {
+        const name = el.getAttribute('data-stage');
+        const textSpan = el.querySelector('span:first-child');
+        if (name === stageName) {
+          textSpan.className = 'text-ink font-bold bg-term-bright px-1.5 py-0.5 border border-term-dark/50';
+        } else {
+          textSpan.className = 'text-dim';
+        }
+      });
+    }
+
+    function appendTerminalLog(agent, message) {
+      const term = document.getElementById('lab-terminal-logs');
+      if (!term) return;
+      const row = document.createElement('div');
+      const timeStr = new Date().toLocaleTimeString();
+      let colorClass = 'text-gray-300';
+      if (agent === 'DIRECTOR') colorClass = 'text-yellow-400 font-semibold';
+      else if (agent === 'SIMULATION') colorClass = 'text-yellow-200';
+      else if (agent === 'CRITIC') colorClass = 'text-amber-400';
+      else if (agent === 'OPERATOR') colorClass = 'text-cyan-300 font-bold';
+
+      row.innerHTML = `<span class="text-gray-500">[${timeStr}]</span> <span class="${colorClass}">[${agent}]</span> ${message}`;
+      term.appendChild(row);
+      term.scrollTop = term.scrollHeight;
+    }
+
+    async function triggerPipelineCycle() {
+      currentStageIndex = (currentStageIndex + 1) % stages.length;
+      const nextStage = stages[currentStageIndex];
+      setPipelineStage(nextStage);
+
+      try {
+        await fetch('/api/operator/step', { method: 'POST' });
+      } catch (e) {
+        // Local fallback
+        appendTerminalLog('OPERATOR', `Manual cycle triggered: Pipeline advanced to stage ${nextStage}.`);
+      }
+    }
+
+    async function injectCandidate() {
+      try {
+        await fetch('/api/operator/candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'LATTICE-02 (Rubidium-doped 2D Nitride)' })
+        });
+      } catch (e) {
+        appendTerminalLog('OPERATOR', 'Injected candidate LATTICE-02 into processing queue.');
+      }
+      alert('Candidate LATTICE-02 injected into multi-agent verification queue!');
+    }
+
+    // Connect to Server-Sent Events (SSE)
+    function connectEventStream() {
+      const streamTime = document.getElementById('stream-time');
+      const statusInd = document.getElementById('backend-status-indicator');
+
+      if (window.EventSource) {
+        const es = new EventSource('/api/events');
+
+        es.onopen = () => {
+          if (statusInd) statusInd.textContent = 'BACKEND SYNCED';
+          if (streamTime) streamTime.textContent = 'STREAM CONNECTED';
+        };
+
+        es.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'agent_log') {
+              appendTerminalLog(data.payload.agent, data.payload.message);
+            } else if (data.type === 'pipeline_progress') {
+              setPipelineStage(data.payload.stage);
+            } else if (data.type === 'agents_update') {
+              data.payload.forEach(a => {
+                const badge = document.querySelector(`.agent-badge[data-agent="${a.name}"]`);
+                if (badge) {
+                  badge.textContent = a.state;
+                  if (a.state === 'SIMULATING') {
+                    badge.className = 'agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-term-bright/30 text-ink border-term shrink-0 font-bold';
+                  } else {
+                    badge.className = 'agent-badge px-1.5 py-0.5 text-[9px] font-mono border bg-panel2 text-faint border-line shrink-0';
+                  }
+                }
+              });
+            }
+          } catch (e) {}
+        };
+
+        es.onerror = () => {
+          if (statusInd) statusInd.textContent = 'STANDALONE MODE';
+          if (streamTime) streamTime.textContent = 'SIMULATOR ACTIVE';
+          runLocalSimulator();
+        };
+      } else {
+        runLocalSimulator();
+      }
+    }
+
+    // Standalone Simulator when server is not running
+    let simStarted = false;
+    function runLocalSimulator() {
+      if (simStarted) return;
+      simStarted = true;
+      const simPhrases = [
+        { agent: 'DIRECTOR', msg: 'Reviewing convergence of interstitial potassium coordinates in 4×4 superlattice.' },
+        { agent: 'LITERATURE', msg: 'Parsed 14 recent preprints on high-temperature 2D electron-phonon superconductivity.' },
+        { agent: 'SIMULATION', msg: 'DFPT computation: logarithmic average phonon frequency ω_log = 1650 K converged.' },
+        { agent: 'CRITIC', msg: 'Verified Berezinskii-Kosterlitz-Thouless bound: observable 2D Tc capped at ~120 K.' },
+        { agent: 'MATERIALS', msg: 'Generated relaxed atomic coordinates for P6/m spacegroup symmetry.' },
+        { agent: 'ARCHIVE', msg: 'Snapshot LATT-01-A4 committed to immutable memory register.' }
+      ];
+      let i = 0;
+      setInterval(() => {
+        i++;
+        const item = simPhrases[i % simPhrases.length];
+        appendTerminalLog(item.agent, item.msg);
+        if (i % 6 === 0) {
+          currentStageIndex = (currentStageIndex + 1) % stages.length;
+          setPipelineStage(stages[currentStageIndex]);
+        }
+      }, 4000);
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      updatePaperView();
+      connectEventStream();
+    });
+  </script>
+</body>
+</html>

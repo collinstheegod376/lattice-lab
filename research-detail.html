@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RESEARCH #001 · LATTICE-01 — Lattice Lab</title>
+  <meta name="description" content="Project dossier for LATTICE-01: Candidates, simulations, papers, and validation metrics." />
+
+  <!-- Google Fonts: STIX Two Text & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#ffffff',
+            panel: '#ffffff',
+            panel2: '#f8f9fa',
+            panel3: '#f1f3f5',
+            line: '#e5e7eb',
+            line2: '#d1d5db',
+            ink: '#111827',
+            dim: '#4b5563',
+            faint: '#6b7280',
+            term: '#eab308',
+            'term-bright': '#facc15',
+            'term-dark': '#ca8a04',
+            termdim: '#854d0e',
+            violet: '#7c3aed',
+            warn: '#d97706',
+            fail: '#dc2626'
+          },
+          fontSize: {
+            '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+            system: ['STIX Two Text', 'Times New Roman', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body, html {
+      padding: 0;
+      margin: 0;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      background-image: 
+        linear-gradient(rgba(234, 179, 8, 0.04) 1px, transparent 0),
+        linear-gradient(90deg, rgba(234, 179, 8, 0.04) 1px, transparent 0);
+      background-size: 40px 40px;
+      background-position: -1px -1px;
+    }
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .font-system {
+      font-family: 'STIX Two Text', 'Times New Roman', Georgia, serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-base text-ink">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="relative border-b border-line px-3 sm:px-4 h-11 flex items-center gap-2 sm:gap-3 shrink-0 bg-base z-30">
+    <a class="shrink-0 flex items-center gap-2 group" aria-label="LATTICE LAB home" href="/">
+      <div class="w-6 h-6 border border-ink/80 flex items-center justify-center bg-term-bright/20 group-hover:bg-term-bright/40 transition">
+        <svg class="w-4 h-4 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      <span class="font-mono font-bold text-xs tracking-[0.16em] text-ink select-none">LATTICE LAB</span>
+    </a>
+
+    <nav class="hidden sm:flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/">HOME</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/lab">LAB</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-medium" href="/research">RESEARCH</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/archive">ARCHIVE</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/agents">AGENTS</a>
+    </nav>
+
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+      <a href="/operator" class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-dim border-line hover:text-ink hover:border-line2 bg-panel hover:bg-term-bright/10 transition inline-flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-term animate-pulse"></span>
+        OPERATOR
+      </a>
+      <span class="w-px h-4 bg-line mx-0.5 hidden sm:block"></span>
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition px-1 py-0.5 border border-transparent hover:border-line" title="arXiv:2601.00931">
+        <span aria-hidden="true" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; line-height: 1; white-space: nowrap">
+          <span style="color: #4b5563">ar</span><span style="color: #b31b1b; position: relative; top: 0.13em">X</span><span style="color: #4b5563">iv</span>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== PROJECT DOSSIER ==================== -->
+  <main class="flex-1 flex flex-col font-system">
+    <div class="p-4 sm:p-6 max-w-5xl mx-auto w-full">
+      
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 text-2xs text-faint mb-3 font-mono">
+        <a href="/research" class="hover:text-ink">RESEARCH</a>
+        <span>/</span>
+        <span class="text-ink font-semibold">RESEARCH #001</span>
+      </div>
+
+      <!-- Project Header -->
+      <div class="border border-line bg-white p-5 shadow-sm mb-6 font-mono">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-baseline gap-3">
+            <h1 class="text-lg font-bold text-ink">RESEARCH #001 · LATTICE-01</h1>
+            <span class="text-2xs uppercase tracking-widest bg-term-bright/30 text-ink border border-term-dark/40 px-2 py-0.5 font-bold">active</span>
+          </div>
+          <a href="https://arxiv.org/abs/2601.00931" target="_blank" class="text-2xs text-dim hover:text-ink border border-line px-2 py-1 bg-panel2">arXiv:2601.00931 ↗</a>
+        </div>
+        <div class="text-xs text-dim mt-2 font-system leading-relaxed">
+          potassium-doped graphene superlattice — property engineering & 2D superconducting candidate search.
+        </div>
+        <p class="text-faint text-2xs mt-2 leading-relaxed">
+          Continuation of the LATTICE-01 research archive. The lab investigates how targeted modifications (defects, dopants, strain, terminations) move measurable properties, advancing candidates only as far as the evidence supports.
+        </p>
+      </div>
+
+      <!-- Section: Candidates -->
+      <div class="mb-8 font-mono">
+        <div class="label mb-2">CANDIDATE MATERIALS SCREENED</div>
+        <div class="border border-line bg-white shadow-sm overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-line bg-panel2 text-2xs text-faint">
+                <th class="p-2.5">CODE</th>
+                <th class="p-2.5">NAME & DESCRIPTION</th>
+                <th class="p-2.5">FORMULA</th>
+                <th class="p-2.5">SCORE</th>
+                <th class="p-2.5">STATUS</th>
+                <th class="p-2.5">AUTHOR</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-line">
+              <tr class="hover:bg-gray-50">
+                <td class="p-2.5 font-bold text-ink">LAT-005</td>
+                <td class="p-2.5 font-system text-dim">F-covalent LATTICE-01 (interstitial retained)</td>
+                <td class="p-2.5 text-faint text-2xs">Li@Lattice–F₂</td>
+                <td class="p-2.5 text-ink font-semibold">0.479</td>
+                <td class="p-2.5"><span class="px-1.5 py-0.5 text-[9px] bg-yellow-100 border border-yellow-300 text-yellow-900 font-bold">SIMULATED</span></td>
+                <td class="p-2.5 text-faint text-2xs">LAB-04</td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td class="p-2.5 font-bold text-ink">LAT-004</td>
+                <td class="p-2.5 font-system text-dim">LATTICE-01 variant LAT-004</td>
+                <td class="p-2.5 text-faint text-2xs">C93X4</td>
+                <td class="p-2.5 text-ink font-semibold">0.602</td>
+                <td class="p-2.5"><span class="px-1.5 py-0.5 text-[9px] bg-term-bright/30 border border-term-dark/50 text-ink font-bold">COMPUTATIONALLY VALIDATED</span></td>
+                <td class="p-2.5 text-faint text-2xs">LAB-04</td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td class="p-2.5 font-bold text-ink">LAT-003</td>
+                <td class="p-2.5 font-system text-dim">LATTICE-01 variant LAT-003</td>
+                <td class="p-2.5 text-faint text-2xs">C91X1</td>
+                <td class="p-2.5 text-ink font-semibold">0.576</td>
+                <td class="p-2.5"><span class="px-1.5 py-0.5 text-[9px] bg-term-bright/30 border border-term-dark/50 text-ink font-bold">COMPUTATIONALLY VALIDATED</span></td>
+                <td class="p-2.5 text-faint text-2xs">LAB-04</td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td class="p-2.5 font-bold text-ink">LAT-002</td>
+                <td class="p-2.5 font-system text-dim">LATTICE-01 variant LAT-002</td>
+                <td class="p-2.5 text-faint text-2xs">C46X5</td>
+                <td class="p-2.5 text-ink font-semibold">0.367</td>
+                <td class="p-2.5"><span class="px-1.5 py-0.5 text-[9px] bg-term-bright/30 border border-term-dark/50 text-ink font-bold">COMPUTATIONALLY VALIDATED</span></td>
+                <td class="p-2.5 text-faint text-2xs">LAB-04</td>
+              </tr>
+              <tr class="hover:bg-gray-50">
+                <td class="p-2.5 font-bold text-ink">LAT-000</td>
+                <td class="p-2.5 font-system text-dim">LATTICE-01:B (edge-boron)</td>
+                <td class="p-2.5 text-faint text-2xs">C90B4</td>
+                <td class="p-2.5 text-ink font-semibold">0.880</td>
+                <td class="p-2.5"><span class="px-1.5 py-0.5 text-[9px] bg-green-100 border border-green-300 text-green-900 font-bold">EXPERIMENTALLY VALIDATED</span></td>
+                <td class="p-2.5 text-faint text-2xs">LAB-04</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section: Key First-Principles Papers -->
+      <div class="mb-8 font-mono">
+        <div class="label mb-2">FOUNDATIONAL PAPERS IN ARCHIVE</div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div class="p-3 border border-line bg-white shadow-sm hover:border-line2 transition">
+            <span class="text-2xs text-faint block mb-1">2D Materials (2025)</span>
+            <div class="text-xs font-semibold text-ink font-system mb-1">Strain-engineered bandgap modulation in LATTICE-01</div>
+            <p class="text-2xs text-dim leading-snug">Demonstrates reversible bandgap opening under biaxial strain with implications for switching.</p>
+          </div>
+          <div class="p-3 border border-line bg-white shadow-sm hover:border-line2 transition">
+            <span class="text-2xs text-faint block mb-1">Surface Science Letters (2025)</span>
+            <div class="text-xs font-semibold text-ink font-system mb-1">Surface termination and oxidation resistance in LATTICE-01</div>
+            <p class="text-2xs text-dim leading-snug">Explores chemical terminations improving ambient stability without degrading carrier mobility.</p>
+          </div>
+          <div class="p-3 border border-line bg-white shadow-sm hover:border-line2 transition">
+            <span class="text-2xs text-faint block mb-1">Physical Review Materials (2025)</span>
+            <div class="text-xs font-semibold text-ink font-system mb-1">Thermal transport limits of layered LATTICE-01</div>
+            <p class="text-2xs text-dim leading-snug">Establishes upper bounds on thermal conductivity and role of potassium vacancy ordering.</p>
+          </div>
+          <div class="p-3 border border-line bg-white shadow-sm hover:border-line2 transition">
+            <span class="text-2xs text-faint block mb-1">J. Synthetic 2D Materials (2023)</span>
+            <div class="text-xs font-semibold text-ink font-system mb-1">LATTICE-01: synthesis and baseline electronic structure</div>
+            <p class="text-2xs text-dim leading-snug">Foundational synthesis report introducing baseline supercell band structure and parameters.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-line px-4 py-2 flex items-center justify-between text-2xs text-faint bg-base shrink-0 font-mono">
+    <span>LATTICE LAB · research operating system</span>
+    <span class="text-termdim">SIMULATED LAB · Computational predictions, verified by multi-agent loop</span>
+  </footer>
+</body>
+</html>

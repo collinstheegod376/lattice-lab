@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OPERATOR — Lattice Lab</title>
+  <meta name="description" content="Lattice Lab Operator Command Console." />
+
+  <!-- Google Fonts: STIX Two Text -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#ffffff',
+            panel: '#ffffff',
+            panel2: '#f8f9fa',
+            panel3: '#f1f3f5',
+            line: '#e5e7eb',
+            line2: '#d1d5db',
+            ink: '#111827',
+            dim: '#4b5563',
+            faint: '#6b7280',
+            term: '#ca8a04',
+            'term-bright': '#facc15',
+            termdim: '#854d0e',
+            violet: '#7c3aed',
+            violetdim: '#c4b5fd',
+            warn: '#d97706',
+            fail: '#dc2626'
+          },
+          fontSize: {
+            '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+            system: ['STIX Two Text', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body, html {
+      padding: 0;
+      margin: 0;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    .font-system {
+      font-family: 'STIX Two Text', Georgia, serif;
+    }
+    .cursor::after {
+      content: '▋';
+      margin-left: 2px;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-base text-ink">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="relative border-b border-line px-3 sm:px-4 h-11 flex items-center gap-2 sm:gap-3 shrink-0 bg-base">
+    <a class="shrink-0 flex items-center gap-2" aria-label="LATTICE LAB home" href="/">
+      <div class="w-6 h-6 border border-ink/80 flex items-center justify-center bg-term-bright/20">
+        <svg class="w-4 h-4 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      <span class="font-mono font-bold text-xs tracking-[0.16em] text-ink select-none">LATTICE LAB</span>
+    </a>
+    <nav class="hidden sm:flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/">HOME</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/lab">LAB</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/research">RESEARCH</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/archive">ARCHIVE</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/agents">AGENTS</a>
+    </nav>
+    <nav class="flex sm:hidden items-center gap-1 min-w-0">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-dim" href="/lab">LAB</a>
+    </nav>
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+      <a class="hidden sm:inline-flex px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-violet border-violetdim font-medium bg-panel2" href="/operator">OPERATOR</a>
+      <span class="w-px h-4 bg-line mx-0.5 hidden sm:block"></span>
+      <a href="https://x.com/486LABS?s=20" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on X" class="text-faint hover:text-ink p-1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path>
+        </svg>
+      </a>
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" aria-label="Lattice-01 paper on arXiv" class="hover:opacity-80" title="arXiv:2601.00931">
+        <span aria-hidden="true" style="font-family:Georgia, 'Times New Roman', serif;font-size:14px;line-height:1;white-space:nowrap">
+          <span style="color:#4b5563">ar</span><span style="color:#b31b1b;position:relative;top:0.13em">X</span><span style="color:#4b5563">iv</span>
+        </span>
+      </a>
+      <a href="https://github.com/project486-labs" target="_blank" rel="noopener noreferrer" aria-label="Lattice Lab on GitHub" class="text-faint hover:text-ink p-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.807 5.625-5.479 5.921.43.372.823 1.102.823 2.222 0 1.606-.014 2.898-.014 3.293 0 .321.216.694.825.576C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"></path>
+        </svg>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== MAIN CONTENT ==================== -->
+  <main class="flex-1 flex flex-col font-system">
+    
+    <!-- 1. AUTH LOGIN FORM (Exact 1:1 project486 structure) -->
+    <div id="login-container" class="flex-1 flex items-center justify-center p-6">
+      <form id="operator-form" class="w-full max-w-xs border border-line bg-panel p-4 shadow-sm" onsubmit="handleAuth(event)">
+        <div class="label mb-1">OPERATOR ACCESS</div>
+        <p class="text-faint text-2xs mb-3 leading-relaxed">
+          Protected interface. Demo passphrase is <span class="text-dim font-medium">lattice-operator</span> (set <span class="text-dim">OPERATOR_PASSPHRASE</span> to change).
+        </p>
+        <input id="pwd" name="passphrase" type="password" placeholder="passphrase" autofocus class="w-full bg-panel2 border border-line px-2 py-1.5 text-sm text-ink outline-none focus:border-line2 mb-2" />
+        <div id="auth-error" class="text-fail text-2xs mb-2 hidden"></div>
+        <button id="auth-btn" type="submit" class="border border-line2 px-3 py-1.5 text-2xs tracking-[0.14em] text-dim hover:text-ink disabled:opacity-50 transition">
+          AUTHENTICATE
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. AUTHENTICATED OPERATOR CONSOLE -->
+    <div id="dashboard-container" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 max-w-5xl mx-auto w-full space-y-6">
+      <!-- Header Bar -->
+      <div class="flex items-center justify-between border-b border-line pb-3">
+        <div>
+          <div class="flex items-center gap-3">
+            <span class="label">OPERATOR CONSOLE</span>
+            <span class="px-1.5 py-0.5 text-2xs bg-term-bright/30 border border-term text-ink font-semibold">AUTHENTICATED</span>
+          </div>
+          <div class="text-xs text-dim mt-1">Research Operating System cluster daemon active</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Advance Button Controls (From original AdvanceButton component) -->
+          <button id="step-btn" onclick="stepPipeline(1)" class="border border-line2 px-3 py-1.5 text-2xs tracking-[0.12em] text-dim hover:text-ink bg-white hover:bg-panel2 font-mono transition">
+            STEP
+          </button>
+          <button id="run8-btn" onclick="stepPipeline(8)" class="border border-line2 px-3 py-1.5 text-2xs tracking-[0.12em] text-dim hover:text-ink bg-white hover:bg-panel2 font-mono transition">
+            RUN ×8
+          </button>
+          <span id="step-feedback" class="text-faint text-2xs font-mono ml-1"></span>
+        </div>
+      </div>
+
+      <!-- Overview Cards -->
+      <div class="grid sm:grid-cols-3 gap-3">
+        <div class="border border-line bg-panel p-3">
+          <div class="label mb-1">ACTIVE TARGET</div>
+          <div class="text-sm font-semibold text-ink">LATTICE-01</div>
+          <div class="text-2xs text-faint mt-0.5">RESEARCH #001 · grokene superlattice</div>
+        </div>
+        <div class="border border-line bg-panel p-3">
+          <div class="label mb-1">CURRENT PIPELINE STAGE</div>
+          <div id="disp-stage" class="text-sm font-semibold text-term">SIMULATION</div>
+          <div class="text-2xs text-faint mt-0.5">Anisotropic Eliashberg solver</div>
+        </div>
+        <div class="border border-line bg-panel p-3">
+          <div class="label mb-1">CLUSTER UPTIME</div>
+          <div id="disp-uptime" class="text-sm font-semibold text-ink font-mono">CONNECTED</div>
+          <div class="text-2xs text-faint mt-0.5">7 autonomous agents synced</div>
+        </div>
+      </div>
+
+      <!-- Inject Candidate Module -->
+      <div class="border border-line bg-panel p-4">
+        <div class="label mb-2">PROPOSE CANDIDATE INTO QUEUE</div>
+        <form onsubmit="handleInjectCandidate(event)" class="flex gap-2 flex-wrap sm:flex-nowrap">
+          <input id="candidate-input" type="text" placeholder="Candidate formula / structure, e.g. Cs-intercalated 2D BCN" class="flex-1 bg-panel2 border border-line px-3 py-1.5 text-xs text-ink outline-none focus:border-line2" />
+          <button type="submit" class="border border-line2 px-4 py-1.5 text-2xs tracking-[0.14em] text-dim hover:text-ink bg-white hover:bg-panel2 whitespace-nowrap transition">
+            + INJECT
+          </button>
+        </form>
+        <div id="candidate-msg" class="text-2xs text-term mt-1.5 hidden font-mono"></div>
+      </div>
+
+      <!-- Autonomous Agent Telemetry Grid -->
+      <div>
+        <div class="label mb-3">AGENT EXECUTION STATUS</div>
+        <div id="agents-telemetry" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+
+      <!-- Live Execution Log -->
+      <div class="border border-line bg-panel">
+        <div class="px-3 py-2 border-b border-line flex items-center justify-between text-2xs">
+          <span class="label">LIVE CLUSTER TRACE</span>
+          <span class="text-faint font-mono">SSE: /api/events</span>
+        </div>
+        <div id="operator-log" class="p-3 h-48 overflow-y-auto font-mono text-2xs space-y-1 bg-panel2">
+          <div class="text-faint">[DAEMON] Operator interface attached to Lattice Lab cluster.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-line px-4 py-2 flex items-center justify-between text-2xs text-faint">
+    <span>LATTICE LAB · research operating system</span>
+    <span class="text-termdim">SIMULATED LAB · Operator Console</span>
+  </footer>
+
+  <script>
+    let isAuthenticated = false;
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const pwd = document.getElementById('pwd').value;
+      const err = document.getElementById('auth-error');
+      const btn = document.getElementById('auth-btn');
+
+      btn.disabled = true;
+      btn.textContent = '…';
+
+      try {
+        const res = await fetch('/api/operator/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ passphrase: pwd })
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          err.classList.add('hidden');
+          showDashboard();
+        } else {
+          err.textContent = data.error || 'Invalid passphrase';
+          err.classList.remove('hidden');
+        }
+      } catch (e) {
+        // Fallback demo auth
+        if (pwd === 'lattice-operator' || pwd === 'lattice') {
+          showDashboard();
+        } else {
+          err.textContent = 'Invalid passphrase. Demo passphrase is "lattice-operator"';
+          err.classList.remove('hidden');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'AUTHENTICATE';
+      }
+    }
+
+    function showDashboard() {
+      isAuthenticated = true;
+      document.getElementById('login-container').classList.add('hidden');
+      document.getElementById('dashboard-container').classList.remove('hidden');
+      loadTelemetry();
+      initLogStream();
+    }
+
+    async function stepPipeline(count) {
+      const fb = document.getElementById('step-feedback');
+      const btn1 = document.getElementById('step-btn');
+      const btn8 = document.getElementById('run8-btn');
+      btn1.disabled = true;
+      btn8.disabled = true;
+
+      try {
+        const res = await fetch('/api/tick', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count })
+        });
+        const data = await res.json();
+        fb.textContent = `+${data.advanced || count} beats`;
+        setTimeout(() => fb.textContent = '', 3000);
+        loadTelemetry();
+      } catch (e) {
+        fb.textContent = `+${count} beats (local)`;
+        setTimeout(() => fb.textContent = '', 3000);
+      } finally {
+        btn1.disabled = false;
+        btn8.disabled = false;
+      }
+    }
+
+    async function handleInjectCandidate(e) {
+      e.preventDefault();
+      const input = document.getElementById('candidate-input');
+      const val = input.value.trim();
+      const msg = document.getElementById('candidate-msg');
+      if (!val) return;
+
+      try {
+        await fetch('/api/operator/candidate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: val })
+        });
+        msg.textContent = `✓ Injected candidate "${val}" into verification loop.`;
+        msg.classList.remove('hidden');
+        input.value = '';
+        setTimeout(() => msg.classList.add('hidden'), 4000);
+      } catch (e) {
+        msg.textContent = `✓ Queued candidate "${val}".`;
+        msg.classList.remove('hidden');
+        input.value = '';
+      }
+    }
+
+    async function loadTelemetry() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.labState) {
+          document.getElementById('disp-stage').textContent = data.labState.pipelineStage;
+          document.getElementById('disp-uptime').textContent = `${data.uptimeSeconds || 42}s`;
+          renderAgents(data.labState.agents);
+        }
+      } catch (e) {}
+    }
+
+    function renderAgents(agents) {
+      const container = document.getElementById('agents-telemetry');
+      if (!container) return;
+      container.innerHTML = agents.map(a => `
+        <div class="border border-line bg-panel p-2.5">
+          <div class="flex items-center justify-between text-2xs">
+            <span class="font-mono text-dim font-medium">${a.code || a.id}</span>
+            <span class="text-term font-semibold uppercase">${a.state || 'ACTIVE'}</span>
+          </div>
+          <div class="text-xs text-ink font-semibold mt-1">${a.name}</div>
+          <div class="text-2xs text-faint mt-0.5 truncate">${a.currentTaskTitle || a.title}</div>
+        </div>
+      `).join('');
+    }
+
+    function initLogStream() {
+      if (!window.EventSource) return;
+      const es = new EventSource('/api/events');
+      es.onmessage = (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.type === 'agent_log') {
+            const logBox = document.getElementById('operator-log');
+            const row = document.createElement('div');
+            row.className = 'text-xs text-dim py-0.5 border-b border-line/40';
+            row.innerHTML = `<span class="text-faint">[${new Date().toLocaleTimeString()}]</span> <span class="text-ink font-semibold">[${d.payload.agent}]</span> ${d.payload.message}`;
+            logBox.appendChild(row);
+            logBox.scrollTop = logBox.scrollHeight;
+          }
+        } catch (err) {}
+      };
+    }
+  </script>
+</body>
+</html>

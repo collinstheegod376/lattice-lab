@@ -1,0 +1,19 @@
+{
+  "name": "lattice-lab",
+  "version": "1.0.0",
+  "description": "Lattice Lab - Multi-Agent Research Operating System & Virtual Lab",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "lattice-lab",
+    "materials-science",
+    "multi-agent",
+    "simulation",
+    "superconductor"
+  ],
+  "author": "Lattice Lab Team",
+  "license": "MIT"
+}

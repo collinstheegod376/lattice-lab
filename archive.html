@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RESEARCH ARCHIVE — Lattice Lab</title>
+  <meta name="description" content="Lattice Lab Immutable Memory & Research Archive Database." />
+
+  <!-- Google Fonts: STIX Two Text & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            base: '#ffffff',
+            panel: '#ffffff',
+            panel2: '#f8f9fa',
+            panel3: '#f1f3f5',
+            line: '#e5e7eb',
+            line2: '#d1d5db',
+            ink: '#111827',
+            dim: '#4b5563',
+            faint: '#6b7280',
+            term: '#eab308',
+            'term-bright': '#facc15',
+            'term-dark': '#ca8a04',
+            termdim: '#854d0e',
+            violet: '#7c3aed',
+            violetdim: '#c4b5fd',
+            warn: '#d97706',
+            fail: '#dc2626'
+          },
+          fontSize: {
+            '2xs': ['0.6875rem', { lineHeight: '1rem', letterSpacing: '0.02em' }]
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Consolas', 'monospace'],
+            system: ['STIX Two Text', 'Times New Roman', 'Georgia', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body, html {
+      padding: 0;
+      margin: 0;
+      background-color: #ffffff;
+      color: #111827;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      -webkit-font-smoothing: antialiased;
+      height: 100%;
+    }
+    body {
+      background-image: 
+        linear-gradient(rgba(234, 179, 8, 0.04) 1px, transparent 0),
+        linear-gradient(90deg, rgba(234, 179, 8, 0.04) 1px, transparent 0);
+      background-size: 40px 40px;
+      background-position: -1px -1px;
+    }
+    .label {
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body class="h-screen flex flex-col bg-base text-ink">
+
+  <!-- ==================== HEADER ==================== -->
+  <header class="relative border-b border-line px-3 sm:px-4 h-11 flex items-center gap-2 sm:gap-3 shrink-0 bg-base z-30">
+    <a class="shrink-0 flex items-center gap-2 group" aria-label="LATTICE LAB home" href="/">
+      <div class="w-6 h-6 border border-ink/80 flex items-center justify-center bg-term-bright/20 group-hover:bg-term-bright/40 transition">
+        <svg class="w-4 h-4 text-ink" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="12 2 2 7 12 12 22 7 12 2" />
+          <polyline points="2 17 12 22 22 17" />
+          <polyline points="2 12 12 17 22 12" />
+        </svg>
+      </div>
+      <span class="font-mono font-bold text-xs tracking-[0.16em] text-ink select-none">LATTICE LAB</span>
+    </a>
+
+    <nav class="hidden sm:flex items-center gap-1 min-w-0 overflow-x-auto no-scrollbar">
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/">HOME</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/lab">LAB</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/research">RESEARCH</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-ink border-line2 bg-panel2 font-medium" href="/archive">ARCHIVE</a>
+      <a class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-faint border-transparent hover:text-ink hover:border-line transition" href="/agents">AGENTS</a>
+    </nav>
+
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
+      <a href="/operator" class="px-2.5 py-1 text-2xs tracking-[0.14em] border whitespace-nowrap text-dim border-line hover:text-ink hover:border-line2 bg-panel hover:bg-term-bright/10 transition inline-flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-term animate-pulse"></span>
+        OPERATOR
+      </a>
+      <span class="w-px h-4 bg-line mx-0.5 hidden sm:block"></span>
+      <a href="https://arxiv.org/abs/2601.00931" target="_blank" rel="noopener noreferrer" class="hover:opacity-80 transition px-1 py-0.5 border border-transparent hover:border-line" title="arXiv:2601.00931">
+        <span aria-hidden="true" style="font-family: Georgia, 'Times New Roman', serif; font-size: 13px; line-height: 1; white-space: nowrap">
+          <span style="color: #4b5563">ar</span><span style="color: #b31b1b; position: relative; top: 0.13em">X</span><span style="color: #4b5563">iv</span>
+        </span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ==================== ARCHIVE FILTER BAR ==================== -->
+  <div class="border-b border-line px-4 sm:px-6 py-3 bg-panel2 shrink-0">
+    <div class="flex items-center justify-between mb-2">
+      <span class="label">RESEARCH ARCHIVE</span>
+      <span id="results-count" class="text-faint text-2xs font-mono">31 results</span>
+    </div>
+
+    <!-- Filter Form -->
+    <div class="flex flex-wrap items-center gap-2">
+      <input id="filter-search" oninput="applyFilters()" placeholder="search title / body…" class="bg-white border border-line text-ink text-xs px-2.5 py-1 focus:border-term outline-none w-52 shadow-sm" />
+
+      <select id="filter-type" onchange="applyFilters()" class="bg-white border border-line text-dim text-xs px-2 py-1 focus:border-term outline-none shadow-sm">
+        <option value="">all types</option>
+        <option value="Paper">Paper</option>
+        <option value="Hypothesis">Hypothesis</option>
+        <option value="Candidate">Candidate</option>
+        <option value="Simulation">Simulation</option>
+        <option value="Critique">Critique</option>
+        <option value="Report">Report</option>
+      </select>
+
+      <select id="filter-state" onchange="applyFilters()" class="bg-white border border-line text-dim text-xs px-2 py-1 focus:border-term outline-none shadow-sm">
+        <option value="">all states</option>
+        <option value="HYPOTHESIS">HYPOTHESIS</option>
+        <option value="SIMULATED">SIMULATED</option>
+        <option value="COMPUTATIONALLY VALIDATED">COMPUTATIONALLY VALIDATED</option>
+        <option value="EXPERIMENTALLY VALIDATED">EXPERIMENTALLY VALIDATED</option>
+      </select>
+
+      <select id="filter-author" onchange="applyFilters()" class="bg-white border border-line text-dim text-xs px-2 py-1 focus:border-term outline-none shadow-sm">
+        <option value="">all researchers</option>
+        <option value="LAB-01">LAB-01 DIRECTOR</option>
+        <option value="LAB-02">LAB-02 LITERATURE</option>
+        <option value="LAB-03">LAB-03 HYPOTHESIS</option>
+        <option value="LAB-04">LAB-04 MATERIALS</option>
+        <option value="LAB-05">LAB-05 SIMULATION</option>
+        <option value="LAB-06">LAB-06 CRITIC</option>
+        <option value="LAB-07">LAB-07 ARCHIVE</option>
+      </select>
+
+      <select id="filter-project" onchange="applyFilters()" class="bg-white border border-line text-dim text-xs px-2 py-1 focus:border-term outline-none shadow-sm">
+        <option value="">all projects</option>
+        <option value="RESEARCH #001">RESEARCH #001</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- ==================== ARCHIVE LIST ==================== -->
+  <main class="flex-1 overflow-y-auto bg-white font-mono">
+    <div id="archive-list-container" class="divide-y divide-line text-xs">
+      <!-- Generated dynamically by JavaScript -->
+    </div>
+  </main>
+
+  <!-- ==================== ARTIFACT DETAIL MODAL ==================== -->
+  <div id="artifact-modal" class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="w-full max-w-lg border border-line bg-white p-6 shadow-2xl relative font-mono">
+      <button onclick="closeArtifactModal()" class="absolute top-3 right-3 text-faint hover:text-ink text-sm">✕</button>
+      <div class="label mb-1">ARCHIVE RECORD INSPECTOR</div>
+      <div id="modal-art-id" class="text-2xs text-faint mb-3">ID: LATT-01-A01</div>
+      <h2 id="modal-art-title" class="text-sm font-bold text-ink mb-2 font-system">Title</h2>
+      <div id="modal-art-summary" class="text-xs text-dim mb-4 leading-relaxed font-system p-3 bg-panel2 border border-line">
+        Summary
+      </div>
+      <div class="grid grid-cols-2 gap-2 text-2xs mb-4">
+        <div class="p-2 border border-line bg-white">
+          <span class="text-faint block">AUTHOR</span>
+          <span id="modal-art-author" class="font-bold text-ink">LAB-05</span>
+        </div>
+        <div class="p-2 border border-line bg-white">
+          <span class="text-faint block">VALIDATION STATUS</span>
+          <span id="modal-art-status" class="font-bold text-term-dark">COMPUTATIONALLY VALIDATED</span>
+        </div>
+      </div>
+      <button onclick="closeArtifactModal()" class="w-full py-1.5 border border-line bg-panel2 hover:bg-white text-ink text-2xs tracking-wider transition">
+        CLOSE RECORD
+      </button>
+    </div>
+  </div>
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="border-t border-line px-4 py-2 flex items-center justify-between text-2xs text-faint bg-base shrink-0 font-mono">
+    <span>LATTICE LAB · research operating system</span>
+    <span class="text-termdim">SIMULATED LAB · Cryptographically signed provenance register</span>
+  </footer>
+
+  <!-- ==================== CONTROLLER SCRIPT ==================== -->
+  <script>
+    const mockArchiveRecords = [
+      { id: "LATT-01-031", type: "Simulation", title: "SIMULATED assessment plan: F-covalent terminated LATTICE-01", author: "LAB-05", project: "RESEARCH #001", date: "2026-08-25", state: "SIMULATED", summary: "SIMULATED comparison plan for F-covalent terminated LATTICE-01 against same-motif physical-capping and unprotected controls." },
+      { id: "LATT-01-030", type: "Candidate", title: "Candidate: F-covalent terminated LATTICE-01 (interstitial retained)", author: "LAB-04", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "Hypothesis-level proposal of one LATTICE-01 variant with covalent fluorine surface termination." },
+      { id: "LATT-01-029", type: "Hypothesis", title: "Covalent termination vs physical capping for interstitial oxidation resistance", author: "LAB-03", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "Proposed: covalent surface termination should suppress oxidation of the alkali-like interstitial without altering van Hove singularities." },
+      { id: "LATT-01-028", type: "Report", title: "Literature synthesis: oxidation-resistant surface termination for LATTICE-01", author: "LAB-02", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "Prior art survey of physical capping versus covalent passivations in 2D heterostructures." },
+      { id: "LATT-01-027", type: "Report", title: "Beat report — interlayer dopant screening for n-type stability", author: "LAB-07", project: "RESEARCH #001", date: "2026-08-25", state: "COMPUTATIONALLY VALIDATED", summary: "Filed to long-term project memory with cryptographic validation hash." },
+      { id: "LATT-01-026", type: "Report", title: "Validation — LAT-004", author: "LAB-05", project: "RESEARCH #001", date: "2026-08-25", state: "COMPUTATIONALLY VALIDATED", summary: "Computationally validated via independent re-computation on 32x32 k-mesh." },
+      { id: "LATT-01-025", type: "Critique", title: "Critique — interlayer dopant screening for n-type stability", author: "LAB-06", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "Adversarial review passed without thermodynamic instabilities." },
+      { id: "LATT-01-024", type: "Simulation", title: "Simulation — bandgap and formation energy convergence", author: "LAB-05", project: "RESEARCH #001", date: "2026-08-25", state: "SIMULATED", summary: "bandgap_eV=0.427, formationEnergy_eV=-0.342, mobility_score=0.602" },
+      { id: "LATT-01-023", type: "Candidate", title: "Candidate — supercell variant LAT-004", author: "LAB-04", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "Proposed LATTICE-01 structural variant with alkali dopant spacing." },
+      { id: "LATT-01-022", type: "Hypothesis", title: "Hypothesis — interlayer dopant screening for n-type stability", author: "LAB-03", project: "RESEARCH #001", date: "2026-08-25", state: "HYPOTHESIS", summary: "A falsifiable mechanism proposed for interlayer dopant screening." },
+      { id: "LATT-01-021", type: "Paper", title: "Strain-engineered bandgap modulation in LATTICE-01", author: "LAB-02", project: "RESEARCH #001", date: "2026-07-11", state: "EXPERIMENTALLY VALIDATED", summary: "Demonstrates reversible bandgap opening in LATTICE-01 under biaxial strain." },
+      { id: "LATT-01-020", type: "Paper", title: "Surface termination and oxidation resistance in LATTICE-01", author: "LAB-02", project: "RESEARCH #001", date: "2026-05-27", state: "EXPERIMENTALLY VALIDATED", summary: "Explores chemical terminations improving ambient stability without degrading mobility." },
+      { id: "LATT-01-019", type: "Paper", title: "Thermal transport limits of layered LATTICE-01", author: "LAB-02", project: "RESEARCH #001", date: "2026-02-26", state: "EXPERIMENTALLY VALIDATED", summary: "Establishes upper bounds on thermal conductivity in stacked LATTICE-01." },
+      { id: "LATT-01-018", type: "Paper", title: "Dopant screening for n-type LATTICE-01", author: "LAB-02", project: "RESEARCH #001", date: "2025-10-29", state: "EXPERIMENTALLY VALIDATED", summary: "Computational screening of substitutional dopants for stable n-type behavior." },
+      { id: "LATT-01-017", type: "Paper", title: "Defect landscapes in LATTICE-01 monolayers", author: "LAB-02", project: "RESEARCH #001", date: "2025-07-01", state: "EXPERIMENTALLY VALIDATED", summary: "Systematic survey of point and line defects and carrier transport." },
+      { id: "LATT-01-016", type: "Paper", title: "LATTICE-01: synthesis and baseline electronic structure", author: "LAB-02", project: "RESEARCH #001", date: "2024-11-23", state: "EXPERIMENTALLY VALIDATED", summary: "Foundational report introducing LATTICE-01 with baseline band structure." }
+    ];
+
+    function getBadgeClass(state) {
+      if (state === "COMPUTATIONALLY VALIDATED") return "text-ink bg-term-bright/30 border-term-dark/50 font-bold";
+      if (state === "SIMULATED") return "text-yellow-900 bg-yellow-100 border-yellow-300 font-semibold";
+      if (state === "EXPERIMENTALLY VALIDATED") return "text-green-900 bg-green-100 border-green-300 font-bold";
+      return "text-violet bg-violetdim/20 border-violet/30 font-medium";
+    }
+
+    function renderArchive(list) {
+      const container = document.getElementById('archive-list-container');
+      const counter = document.getElementById('results-count');
+      counter.textContent = `${list.length} results`;
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-faint">No records matching query</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(item => `
+        <div onclick='openArtifactModal(${JSON.stringify(item)})' class="flex items-center gap-3 px-4 sm:px-6 py-2.5 hover:bg-panel2 cursor-pointer transition">
+          <span class="text-faint text-2xs w-20 shrink-0">${item.type}</span>
+          <span class="text-ink text-xs flex-1 truncate font-medium hover:text-term-dark transition">${item.title}</span>
+          <span class="text-faint text-2xs w-24 shrink-0 hidden sm:block">${item.project}</span>
+          <span class="text-dim text-2xs w-16 shrink-0 hidden sm:block font-bold">${item.author}</span>
+          <span class="text-faint text-2xs w-20 shrink-0 hidden md:block">${item.date}</span>
+          <span class="inline-flex items-center gap-1 border px-1.5 text-[9px] py-0 tracking-[0.08em] ${getBadgeClass(item.state)} shrink-0">
+            ${item.state}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function applyFilters() {
+      const q = document.getElementById('filter-search').value.toLowerCase();
+      const type = document.getElementById('filter-type').value;
+      const state = document.getElementById('filter-state').value;
+      const author = document.getElementById('filter-author').value;
+
+      const filtered = mockArchiveRecords.filter(item => {
+        if (q && !item.title.toLowerCase().includes(q) && !item.summary.toLowerCase().includes(q)) return false;
+        if (type && item.type !== type) return false;
+        if (state && item.state !== state) return false;
+        if (author && item.author !== author) return false;
+        return true;
+      });
+
+      renderArchive(filtered);
+    }
+
+    function openArtifactModal(item) {
+      document.getElementById('modal-art-id').textContent = `ID: ${item.id} · TIMESTAMP: ${item.date}`;
+      document.getElementById('modal-art-title').textContent = item.title;
+      document.getElementById('modal-art-summary').textContent = item.summary;
+      document.getElementById('modal-art-author').textContent = item.author;
+      document.getElementById('modal-art-status').textContent = item.state;
+      document.getElementById('artifact-modal').classList.remove('hidden');
+      document.getElementById('artifact-modal').classList.add('flex');
+    }
+
+    function closeArtifactModal() {
+      document.getElementById('artifact-modal').classList.add('hidden');
+      document.getElementById('artifact-modal').classList.remove('flex');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderArchive(mockArchiveRecords);
+    });
+  </script>
+</body>
+</html>
