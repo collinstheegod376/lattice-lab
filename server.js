@@ -1,8 +1,8 @@
-const http = require('http');
-const fs = require('fs');
+const express = require('express');
 const path = require('path');
-const url = require('url');
+const fs = require('fs');
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 const OPERATOR_PASSPHRASE = process.env.OPERATOR_PASSPHRASE || 'lattice-operator';
 
@@ -24,7 +24,7 @@ const labState = {
       supercell: '4×4 supercell, ~6.25 at.% interstitial K'
     }
   },
-  pipelineStage: 'SIMULATION', // RESEARCH -> HYPOTHESIS -> CANDIDATE -> SIMULATION -> CRITIQUE -> VALIDATION -> ARCHIVE
+  pipelineStage: 'SIMULATION',
   agents: [
     { id: 'lat-01', code: 'LAB-01', name: 'DIRECTOR', title: 'research director', role: 'DIRECTOR', state: 'MESSAGING', accent: 'yellow', currentTaskTitle: 'supercell boundary optimization' },
     { id: 'lat-02', code: 'LAB-02', name: 'LITERATURE', title: 'literature & prior art', role: 'LITERATURE', state: 'MESSAGING', accent: 'yellow', currentTaskTitle: 'intercalation stability literature review' },
@@ -50,15 +50,18 @@ const labState = {
 
 // SSE Subscribers
 const sseClients = new Set();
-
 function broadcastEvent(type, payload) {
   const data = JSON.stringify({ type, payload, timestamp: new Date().toISOString() });
   for (const client of sseClients) {
-    client.write(`data: ${data}\n\n`);
+    try {
+      client.write(`data: ${data}\n\n`);
+    } catch (e) {
+      sseClients.delete(client);
+    }
   }
 }
 
-// Background simulation loop generating live lab events
+// Background simulation ticker (unref'd for serverless compatibility)
 const simulationPhrases = [
   { agent: 'DIRECTOR', msg: 'Scheduling refinement pass on potassium interstitial site coordinates.' },
   { agent: 'LITERATURE', msg: 'Indexed 12 recent preprints on 2D electron-phonon superconductivity.' },
@@ -82,12 +85,10 @@ const simTimer = setInterval(() => {
   labState.logStream.push(newLog);
   if (labState.logStream.length > 50) labState.logStream.shift();
 
-  // Randomly toggle an agent state to create dynamic visual feedback
   const randAgent = labState.agents[Math.floor(Math.random() * labState.agents.length)];
   const possibleStates = ['MESSAGING', 'SIMULATING', 'REVIEWING', 'IDLE'];
   randAgent.state = possibleStates[Math.floor(Math.random() * possibleStates.length)];
 
-  // Progress pipeline occasionally
   if (cycleCounter % 8 === 0) {
     const currentIdx = labState.pipelineStages.indexOf(labState.pipelineStage);
     const nextIdx = (currentIdx + 1) % labState.pipelineStages.length;
@@ -98,282 +99,181 @@ const simTimer = setInterval(() => {
   broadcastEvent('agent_log', newLog);
   broadcastEvent('agents_update', labState.agents);
 }, 4500);
-if (typeof simTimer !== 'undefined' && simTimer && simTimer.unref) simTimer.unref();
+if (simTimer && simTimer.unref) simTimer.unref();
 
-// Paper pages metadata
-const paperPages = Array.from({ length: 15 }, (_, i) => {
-  const pageNum = i + 1;
-  return {
-    pageNum,
-    title: pageNum === 1 
-      ? 'AI-Guided Design of a Superconductor Candidate: Lattice-01' 
-      : `Section ${pageNum}: Computational Methodology & Results (Page ${pageNum})`,
-    arxiv: '2601.00931',
-    date: 'January 2026',
-    authors: 'Lattice Lab Autonomous Multi-Agent Collective'
-  };
-});
+// Helper to resolve files across local and Vercel serverless environments
+function resolveFile(name) {
+  const candidates = [
+    path.join(__dirname, name),
+    path.join(process.cwd(), name)
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      try {
+        if (fs.statSync(c).isFile()) return c;
+      } catch (e) {}
+    }
+  }
+  return path.join(__dirname, name);
+}
 
-// HTTP Request Handler
-function handleRequest(req, res) {
-  const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
-
-  // CORS headers
+// Global Middleware
+app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
+app.use(express.json());
 
-  // --- API: SSE Stream (/api/events & /api/stream) ---
-  if (pathname === '/api/events' || pathname === '/api/stream') {
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-    });
-    res.write(`data: ${JSON.stringify({ type: 'init', payload: { labState } })}\n\n`);
-    sseClients.add(res);
+// Serve static assets from both __dirname and process.cwd()
+app.use(express.static(__dirname, { maxAge: '1h' }));
+app.use(express.static(process.cwd(), { maxAge: '1h' }));
 
-    req.on('close', () => {
-      sseClients.delete(res);
-    });
-    return;
-  }
-
-  // --- API: Lab Status ---
-  if (pathname === '/api/status') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ok: true,
-      labState,
-      activeSubscribers: sseClients.size,
-      uptimeSeconds: Math.floor(process.uptime())
-    }));
-    return;
-  }
-
-  // --- API: Agents ---
-  if (pathname === '/api/agents') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ok: true,
-      agents: labState.agents
-    }));
-    return;
-  }
-
-  // --- API: Research Program ---
-  if (pathname === '/api/research') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ok: true,
-      project: labState.project,
-      pipelineStage: labState.pipelineStage
-    }));
-    return;
-  }
-
-  // --- API: Archive ---
-  if (pathname === '/api/archive') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({
-      ok: true,
-      archive: labState.archive
-    }));
-    return;
-  }
-
-  // --- API: Operator Authentication ---
-  if (pathname === '/api/operator/auth' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body || '{}');
-        const passphrase = data.passphrase || '';
-        if (passphrase === OPERATOR_PASSPHRASE || passphrase === '486-operator' || passphrase === 'lattice') {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: true, message: 'Operator authenticated successfully.' }));
-        } else {
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ ok: false, error: 'Invalid passphrase. Demo passphrase is "lattice-operator"' }));
-        }
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: 'Invalid JSON payload' }));
-      }
-    });
-    return;
-  }
-
-  // --- API: Operator Pipeline Step & Tick (/api/tick & /api/operator/step) ---
-  if ((pathname === '/api/tick' || pathname === '/api/operator/step') && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      let count = 1;
-      try {
-        const d = JSON.parse(body || '{}');
-        if (d.count) count = parseInt(d.count, 10) || 1;
-      } catch (e) {}
-
-      for (let i = 0; i < count; i++) {
-        const currentIdx = labState.pipelineStages.indexOf(labState.pipelineStage);
-        const nextIdx = (currentIdx + 1) % labState.pipelineStages.length;
-        labState.pipelineStage = labState.pipelineStages[nextIdx];
-      }
-
-      const stepLog = {
-        timestamp: new Date().toISOString(),
-        agent: 'OPERATOR',
-        message: `Operator pulse: Advanced ${count} beat(s) to stage ${labState.pipelineStage}.`
-      };
-      labState.logStream.push(stepLog);
-
-      broadcastEvent('pipeline_progress', { stage: labState.pipelineStage, triggeredBy: 'OPERATOR' });
-      broadcastEvent('agent_log', stepLog);
-
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, advanced: count, currentStage: labState.pipelineStage }));
-    });
-    return;
-  }
-
-  // --- API: Propose New Candidate ---
-  if (pathname === '/api/operator/candidate' && req.method === 'POST') {
-    let body = '';
-    req.on('data', chunk => body += chunk);
-    req.on('end', () => {
-      try {
-        const data = JSON.parse(body || '{}');
-        const candidateName = data.name || 'LATTICE-02 (Cs-doped BCN)';
-        const newArtifact = {
-          id: `LATT-01-00${labState.archive.length + 1}`,
-          code: `ART-0${labState.archive.length + 1}`,
-          title: `Candidate Proposal: ${candidateName}`,
-          category: 'User Injected Candidate',
-          author: 'OPERATOR INTERFACE',
-          status: 'HYPOTHESIS QUEUED',
-          timestamp: new Date().toISOString()
-        };
-        labState.archive.push(newArtifact);
-
-        const newLog = {
-          timestamp: new Date().toISOString(),
-          agent: 'DIRECTOR',
-          message: `Injected new candidate into pipeline queue: ${candidateName}`
-        };
-        labState.logStream.push(newLog);
-
-        broadcastEvent('agent_log', newLog);
-        broadcastEvent('archive_update', labState.archive);
-
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: true, candidate: newArtifact }));
-      } catch (e) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ ok: false, error: 'Failed to process candidate proposal' }));
-      }
-    });
-    return;
-  }
-
-  // --- Static File & Route Serving ---
-  const routeMap = {
-    '/': 'index.html',
-    '/lab': 'lab.html',
-    '/research': 'research.html',
-    '/research/lattice-01': 'research-detail.html',
-    '/research/grokene': 'research-detail.html',
-    '/archive': 'archive.html',
-    '/agents': 'agents.html',
-    '/operator': 'operator.html'
-  };
-
-  let targetFile = routeMap[pathname];
-  if (!targetFile && pathname.startsWith('/agents/')) {
-    targetFile = 'agents.html';
-  }
-  if (!targetFile) {
-    targetFile = pathname.startsWith('/') ? pathname.slice(1) : pathname;
-  }
-
-  // Robust file resolver for local Node.js and Vercel Serverless Function runtimes
-  function resolveFile(name) {
-    if (!name) return null;
-    const candidates = [
-      path.join(process.cwd(), name),
-      path.join(__dirname, name)
-    ];
-    for (const c of candidates) {
-      if (fs.existsSync(c)) {
-        try {
-          if (fs.statSync(c).isFile()) return c;
-        } catch (e) {}
-      }
-    }
-    return null;
-  }
-
-  let filePath = resolveFile(targetFile);
-  if (!filePath && !path.extname(targetFile)) {
-    filePath = resolveFile(targetFile + '.html');
-  }
-  if (!filePath) {
-    filePath = resolveFile('index.html');
-  }
-
-  if (!filePath) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
-    return;
-  }
-
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeTypes = {
-    '.html': 'text/html; charset=utf-8',
-    '.css': 'text/css; charset=utf-8',
-    '.js': 'application/javascript; charset=utf-8',
-    '.json': 'application/json; charset=utf-8',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon',
-    '.ttf': 'font/ttf',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2'
-  };
-  const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (readErr, content) => {
-    if (readErr) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Internal Server Error: Unable to read file');
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(content);
+// --- API Endpoints ---
+app.get(['/api/events', '/api/stream'], (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
   });
-}
+  res.write(`data: ${JSON.stringify({ type: 'init', payload: { labState } })}\n\n`);
+  sseClients.add(res);
+  req.on('close', () => sseClients.delete(res));
+});
 
-const server = http.createServer(handleRequest);
+app.get('/api/status', (req, res) => {
+  res.json({
+    ok: true,
+    labState,
+    activeSubscribers: sseClients.size,
+    uptimeSeconds: Math.floor(process.uptime())
+  });
+});
 
+app.get('/api/agents', (req, res) => {
+  res.json({ ok: true, agents: labState.agents });
+});
+
+app.get('/api/agent-panel/:id', (req, res) => {
+  const id = req.params.id;
+  const agent = labState.agents.find(a => a.id === id || a.code.toLowerCase() === id.toLowerCase()) || labState.agents[0];
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(`
+    <div class="space-y-4 font-mono text-xs">
+      <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+        <span class="font-bold text-sm text-gray-900">[${agent.code}] ${agent.name}</span>
+        <span class="px-2 py-0.5 text-2xs bg-yellow-100 text-yellow-800 border border-yellow-300 font-bold">${agent.state}</span>
+      </div>
+      <div class="space-y-1">
+        <div class="text-gray-500 uppercase text-2xs">ROLE</div>
+        <div class="text-gray-900 font-medium">${agent.title}</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-gray-500 uppercase text-2xs">CURRENT SUB-GOAL</div>
+        <div class="text-gray-800 bg-gray-50 p-2 border border-gray-200">${agent.currentTaskTitle}</div>
+      </div>
+      <div class="space-y-1">
+        <div class="text-gray-500 uppercase text-2xs">HEURISTIC EVALUATOR</div>
+        <div class="text-gray-700">λ-coupling: 3.82 | Tc threshold: > 280 K | P6/m structural fidelity: 99.4%</div>
+      </div>
+    </div>
+  `);
+});
+
+app.get('/api/research', (req, res) => {
+  res.json({ ok: true, project: labState.project, pipelineStage: labState.pipelineStage });
+});
+
+app.get('/api/archive', (req, res) => {
+  res.json({ ok: true, archive: labState.archive });
+});
+
+app.post('/api/operator/auth', (req, res) => {
+  const passphrase = req.body?.passphrase || '';
+  if (passphrase === OPERATOR_PASSPHRASE || passphrase === '486-operator' || passphrase === 'lattice' || passphrase === 'lattice-operator') {
+    res.json({ ok: true, message: 'Operator authenticated successfully.' });
+  } else {
+    res.status(401).json({ ok: false, error: 'Invalid passphrase. Demo passphrase is "lattice-operator"' });
+  }
+});
+
+app.post(['/api/tick', '/api/operator/step'], (req, res) => {
+  const count = parseInt(req.body?.count, 10) || 1;
+  for (let i = 0; i < count; i++) {
+    const currentIdx = labState.pipelineStages.indexOf(labState.pipelineStage);
+    const nextIdx = (currentIdx + 1) % labState.pipelineStages.length;
+    labState.pipelineStage = labState.pipelineStages[nextIdx];
+  }
+
+  const stepLog = {
+    timestamp: new Date().toISOString(),
+    agent: 'OPERATOR',
+    message: `Operator pulse: Advanced ${count} beat(s) to stage ${labState.pipelineStage}.`
+  };
+  labState.logStream.push(stepLog);
+
+  broadcastEvent('pipeline_progress', { stage: labState.pipelineStage, triggeredBy: 'OPERATOR' });
+  broadcastEvent('agent_log', stepLog);
+
+  res.json({ ok: true, advanced: count, currentStage: labState.pipelineStage });
+});
+
+app.post('/api/operator/candidate', (req, res) => {
+  const candidateName = req.body?.name || 'LATTICE-02 (Cs-doped BCN)';
+  const newArtifact = {
+    id: `LATT-01-00${labState.archive.length + 1}`,
+    code: `ART-0${labState.archive.length + 1}`,
+    title: `Candidate Proposal: ${candidateName}`,
+    category: 'User Injected Candidate',
+    author: 'OPERATOR INTERFACE',
+    status: 'HYPOTHESIS QUEUED',
+    timestamp: new Date().toISOString()
+  };
+  labState.archive.push(newArtifact);
+
+  const newLog = {
+    timestamp: new Date().toISOString(),
+    agent: 'DIRECTOR',
+    message: `Injected new candidate into pipeline queue: ${candidateName}`
+  };
+  labState.logStream.push(newLog);
+
+  broadcastEvent('agent_log', newLog);
+  broadcastEvent('archive_update', labState.archive);
+
+  res.json({ ok: true, candidate: newArtifact });
+});
+
+// --- Page Routes ---
+app.get('/', (req, res) => res.sendFile(resolveFile('index.html')));
+app.get('/lab', (req, res) => res.sendFile(resolveFile('lab.html')));
+app.get('/research', (req, res) => res.sendFile(resolveFile('research.html')));
+app.get(['/research/lattice-01', '/research/grokene'], (req, res) => res.sendFile(resolveFile('research-detail.html')));
+app.get('/archive', (req, res) => res.sendFile(resolveFile('archive.html')));
+app.get(['/agents', '/agents/:id'], (req, res) => res.sendFile(resolveFile('agents.html')));
+app.get('/operator', (req, res) => res.sendFile(resolveFile('operator.html')));
+
+// Fallback to index.html for client-side routing
+app.use((req, res) => {
+  const f = resolveFile(req.path.startsWith('/') ? req.path.slice(1) : req.path);
+  if (fs.existsSync(f) && fs.statSync(f).isFile()) {
+    return res.sendFile(f);
+  }
+  res.sendFile(resolveFile('index.html'));
+});
+
+// Local Development Server
 if (require.main === module) {
-  server.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`=======================================================`);
-    console.log(`  Lattice Lab Backend Running on http://localhost:${PORT}`);
+    console.log(`  Lattice Lab Running on http://localhost:${PORT}`);
     console.log(`  Demo Passphrase: ${OPERATOR_PASSPHRASE}`);
     console.log(`  Real-time SSE Stream: http://localhost:${PORT}/api/events`);
     console.log(`=======================================================`);
   });
 }
 
-module.exports = handleRequest;
-module.exports.server = server;
+module.exports = app;

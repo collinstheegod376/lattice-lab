@@ -15,5 +15,8 @@
     "superconductor"
   ],
   "author": "Lattice Lab Team",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }
