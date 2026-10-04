@@ -347,10 +347,14 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`=======================================================`);
-  console.log(`  Lattice Lab Backend Running on http://localhost:${PORT}`);
-  console.log(`  Demo Passphrase: ${OPERATOR_PASSPHRASE}`);
-  console.log(`  Real-time SSE Stream: http://localhost:${PORT}/api/events`);
-  console.log(`=======================================================`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`=======================================================`);
+    console.log(`  Lattice Lab Backend Running on http://localhost:${PORT}`);
+    console.log(`  Demo Passphrase: ${OPERATOR_PASSPHRASE}`);
+    console.log(`  Real-time SSE Stream: http://localhost:${PORT}/api/events`);
+    console.log(`=======================================================`);
+  });
+}
+
+module.exports = server;

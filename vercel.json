@@ -1,0 +1,10 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/api", "destination": "/api/index.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/research/lattice-01", "destination": "/research-detail.html" },
+    { "source": "/research/grokene", "destination": "/research-detail.html" },
+    { "source": "/agents/:id", "destination": "/agents.html" }
+  ]
+}
