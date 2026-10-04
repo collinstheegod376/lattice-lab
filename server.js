@@ -71,7 +71,7 @@ const simulationPhrases = [
 ];
 
 let cycleCounter = 0;
-setInterval(() => {
+const simTimer = setInterval(() => {
   cycleCounter++;
   const item = simulationPhrases[cycleCounter % simulationPhrases.length];
   const newLog = {
@@ -98,6 +98,7 @@ setInterval(() => {
   broadcastEvent('agent_log', newLog);
   broadcastEvent('agents_update', labState.agents);
 }, 4500);
+if (typeof simTimer !== 'undefined' && simTimer && simTimer.unref) simTimer.unref();
 
 // Paper pages metadata
 const paperPages = Array.from({ length: 15 }, (_, i) => {
@@ -113,8 +114,8 @@ const paperPages = Array.from({ length: 15 }, (_, i) => {
   };
 });
 
-// Create HTTP Server
-const server = http.createServer((req, res) => {
+// HTTP Request Handler
+function handleRequest(req, res) {
   const parsedUrl = url.parse(req.url, true);
   const pathname = parsedUrl.pathname;
 
@@ -302,50 +303,67 @@ const server = http.createServer((req, res) => {
   if (!targetFile) {
     targetFile = pathname.startsWith('/') ? pathname.slice(1) : pathname;
   }
-  let filePath = path.join(__dirname, targetFile);
 
-  // If no extension, try appending .html
-  if (!path.extname(filePath) && fs.existsSync(filePath + '.html')) {
-    filePath = filePath + '.html';
+  // Robust file resolver for local Node.js and Vercel Serverless Function runtimes
+  function resolveFile(name) {
+    if (!name) return null;
+    const candidates = [
+      path.join(process.cwd(), name),
+      path.join(__dirname, name)
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) {
+        try {
+          if (fs.statSync(c).isFile()) return c;
+        } catch (e) {}
+      }
+    }
+    return null;
   }
 
-  // Security check to stay inside directory
-  if (!filePath.startsWith(__dirname)) {
-    res.writeHead(403);
-    res.end('Forbidden');
+  let filePath = resolveFile(targetFile);
+  if (!filePath && !path.extname(targetFile)) {
+    filePath = resolveFile(targetFile + '.html');
+  }
+  if (!filePath) {
+    filePath = resolveFile('index.html');
+  }
+
+  if (!filePath) {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
     return;
   }
 
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      filePath = path.join(__dirname, 'index.html');
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeTypes = {
+    '.html': 'text/html; charset=utf-8',
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.json': 'application/json; charset=utf-8',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.ico': 'image/x-icon',
+    '.ttf': 'font/ttf',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2'
+  };
+  const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+  fs.readFile(filePath, (readErr, content) => {
+    if (readErr) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal Server Error: Unable to read file');
+      return;
     }
-
-    const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes = {
-      '.html': 'text/html; charset=utf-8',
-      '.css': 'text/css; charset=utf-8',
-      '.js': 'application/javascript; charset=utf-8',
-      '.json': 'application/json; charset=utf-8',
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.svg': 'image/svg+xml',
-      '.ico': 'image/x-icon'
-    };
-    const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-    fs.readFile(filePath, (readErr, content) => {
-      if (readErr) {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('Internal Server Error');
-        return;
-      }
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content);
-    });
+    res.writeHead(200, { 'Content-Type': contentType });
+    res.end(content);
   });
-});
+}
+
+const server = http.createServer(handleRequest);
 
 if (require.main === module) {
   server.listen(PORT, () => {
@@ -357,4 +375,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = server;
+module.exports = handleRequest;
+module.exports.server = server;

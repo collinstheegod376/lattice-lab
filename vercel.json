@@ -1,10 +1,21 @@
 {
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/api", "destination": "/api/index.js" },
-    { "source": "/api/(.*)", "destination": "/api/index.js" },
-    { "source": "/research/lattice-01", "destination": "/research-detail.html" },
-    { "source": "/research/grokene", "destination": "/research-detail.html" },
-    { "source": "/agents/:id", "destination": "/agents.html" }
+  "version": 2,
+  "functions": {
+    "server.js": {
+      "includeFiles": [
+        "*.html",
+        "*.js",
+        "*.jpg",
+        "*.png",
+        "*.ttf",
+        "paper/**"
+      ]
+    }
+  },
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "server.js"
+    }
   ]
 }
