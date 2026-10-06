@@ -85,15 +85,30 @@
   <!-- ==================== TOP CONTRACT ADDRESS BANNER ==================== -->
   <div class="w-full border-b border-line bg-panel2/95 text-ink shrink-0 z-40 select-none">
     <div class="mx-auto max-w-7xl px-3 sm:px-4 py-1.5 flex items-center justify-center gap-2 sm:gap-3 text-2xs">
-      <div class="inline-flex items-center gap-2 px-2.5 py-1 border border-line bg-base text-ink shadow-xs">
+      <button type="button" onclick="copyCA(event)" class="group inline-flex items-center gap-2 px-2.5 py-1 border border-line hover:border-term bg-base hover:bg-term-bright/10 transition cursor-pointer text-left focus:outline-none" title="Click to copy Contract Address">
         <span class="w-1.5 h-1.5 rounded-full bg-term animate-pulse shrink-0"></span>
         <span class="text-faint font-semibold uppercase tracking-wider text-[11px]">CA:</span>
-        <span class="font-mono text-ink tracking-widest font-semibold uppercase text-2xs">COMING SOON</span>
-        <span class="ml-1 px-1.5 py-0.5 text-[9px] tracking-widest font-mono border border-line bg-panel2 text-termdim uppercase font-semibold">TBA</span>
-      </div>
-      <div class="flex items-center gap-1.5 text-[11px] font-mono">
-        <a href="https://x.com/latticeproject?s=11" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 text-faint hover:text-ink border border-transparent hover:border-line hover:bg-white transition inline-flex items-center gap-1" title="Lattice on X">
-          <span>x.com</span>
+        <span class="font-mono text-ink tracking-tight font-medium hidden sm:inline select-all">3sPc1t5E5VwJvyWExq4Bu6cqvcGyNfSYs7h1Dme7pump</span>
+        <span class="font-mono text-ink tracking-tight font-medium inline sm:hidden select-all">3sPc1t...e7pump</span>
+        <span class="ml-1 px-1.5 py-0.5 text-[10px] tracking-widest font-mono border border-line group-hover:border-term bg-panel2 text-dim group-hover:text-ink transition shrink-0 inline-flex items-center gap-1">
+          <svg class="ca-copy-icon w-3 h-3 text-faint group-hover:text-ink" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <svg class="ca-check-icon w-3 h-3 text-emerald-600 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span class="ca-copy-feedback font-semibold">COPY</span>
+        </span>
+      </button>
+
+      <div class="hidden md:flex items-center gap-1.5 text-[11px] font-mono">
+        <a href="https://pump.fun/coin/3sPc1t5E5VwJvyWExq4Bu6cqvcGyNfSYs7h1Dme7pump" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 text-faint hover:text-ink border border-transparent hover:border-line hover:bg-white transition inline-flex items-center gap-1" title="Trade on Pump.fun">
+          <span>pump.fun</span>
+          <span class="text-[9px]">↗</span>
+        </a>
+        <a href="https://dexscreener.com/solana/3sPc1t5E5VwJvyWExq4Bu6cqvcGyNfSYs7h1Dme7pump" target="_blank" rel="noopener noreferrer" class="px-2 py-0.5 text-faint hover:text-ink border border-transparent hover:border-line hover:bg-white transition inline-flex items-center gap-1" title="View chart on DexScreener">
+          <span>dexscreener</span>
           <span class="text-[9px]">↗</span>
         </a>
       </div>
@@ -308,6 +323,48 @@
     function closeArtifactModal() {
       document.getElementById('artifact-modal').classList.add('hidden');
       document.getElementById('artifact-modal').classList.remove('flex');
+    }
+
+    // Copy Contract Address (CA)
+    function copyCA(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      const ca = '3sPc1t5E5VwJvyWExq4Bu6cqvcGyNfSYs7h1Dme7pump';
+      const onSuccess = () => {
+        document.querySelectorAll('.ca-copy-feedback').forEach(el => el.textContent = 'COPIED!');
+        document.querySelectorAll('.ca-copy-icon').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.ca-check-icon').forEach(el => el.classList.remove('hidden'));
+        setTimeout(() => {
+          document.querySelectorAll('.ca-copy-feedback').forEach(el => el.textContent = 'COPY');
+          document.querySelectorAll('.ca-copy-icon').forEach(el => el.classList.remove('hidden'));
+          document.querySelectorAll('.ca-check-icon').forEach(el => el.classList.add('hidden'));
+        }, 2000);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(ca).then(onSuccess).catch(() => fallback(ca, onSuccess));
+      } else {
+        fallback(ca, onSuccess);
+      }
+
+      function fallback(text, cb) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        try {
+          document.execCommand('copy');
+          if (cb) cb();
+        } catch (err) {
+          console.error('Copy fallback failed', err);
+        }
+        document.body.removeChild(ta);
+      }
     }
 
     window.addEventListener('DOMContentLoaded', () => {
